@@ -1,9 +1,9 @@
-﻿
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using Demo01SemanticFunctions.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel;
-
 using Microsoft.SemanticKernel.SemanticFunctions;
-using SemanticKernelDemo1.Options;
 
 var cb = new ConfigurationBuilder();
 cb.AddJsonFile("appsettings.json");

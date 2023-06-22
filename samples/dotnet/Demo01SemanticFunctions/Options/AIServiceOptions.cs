@@ -2,7 +2,7 @@
 
 using System.ComponentModel.DataAnnotations;
 
-namespace SemanticKernelDemo1.Options;
+namespace Demo01SemanticFunctions.Options;
 
 /// <summary>
 /// Configuration options for AI services, such as Azure OpenAI and OpenAI.

@@ -1,10 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace SemanticKernelDemo1.Options;
+namespace Demo01SemanticFunctions.Options;
 
 /// <summary>
 /// If the other property is set to the expected value, then this property is required.

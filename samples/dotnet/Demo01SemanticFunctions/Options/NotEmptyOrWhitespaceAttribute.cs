@@ -2,7 +2,7 @@
 
 using System.ComponentModel.DataAnnotations;
 
-namespace SemanticKernelDemo1.Options;
+namespace Demo01SemanticFunctions.Options;
 
 /// <summary>
 /// If the string is set, it must not be empty or whitespace.
