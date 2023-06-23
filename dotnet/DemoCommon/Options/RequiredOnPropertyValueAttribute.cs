@@ -3,7 +3,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace Demo01SemanticFunctions.Options;
+namespace DemoCommon.Options;
 
 /// <summary>
 /// If the other property is set to the expected value, then this property is required.

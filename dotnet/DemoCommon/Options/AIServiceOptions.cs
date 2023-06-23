@@ -2,7 +2,7 @@
 
 using System.ComponentModel.DataAnnotations;
 
-namespace Demo02SkillsRack.Options;
+namespace DemoCommon.Options;
 
 /// <summary>
 /// Configuration options for AI services, such as Azure OpenAI and OpenAI.
@@ -74,4 +74,11 @@ public sealed class AIServiceOptions
     /// </summary>
     [Required, NotEmptyOrWhitespace]
     public string Key { get; set; } = string.Empty;
+
+    public void Validate()
+    {
+        var context = new ValidationContext(this, serviceProvider: null, items: null);
+        var results = new List<ValidationResult>();
+        Validator.ValidateObject(this, context, true);
+    }
 }
