@@ -1,19 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 using DemoCommon.Options;
 using Markdig;
-using Microsoft.AspNetCore.Html;
-using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Orchestration;
 using Microsoft.SemanticKernel.SkillDefinition;
 
-var cb = new ConfigurationBuilder();
-cb.AddJsonFile("appsettings.json");
-cb.AddUserSecrets<AIServiceOptions>(); // re-using the same secret id as CopilotChatWebApi
-var config = cb.Build();
-var options = new AIServiceOptions();
-config.Bind(AIServiceOptions.PropertyName, options);
-options.Validate();
+var options = OptionsAccessor.GetOptions();
 
 var builder = Kernel.Builder
     .WithAzureChatCompletionService(
