@@ -156,6 +156,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo07ChatBot", "..\samples
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoCommon", "..\samples\dotnet\DemoCommon\DemoCommon.csproj", "{496D457D-0079-4AE8-94D0-29B1D865CC74}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo08Planner", "..\samples\dotnet\Demo08Planner\Demo08Planner.csproj", "{626940A8-4C5D-4A66-A76C-34CCBB8ED104}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -401,6 +403,12 @@ Global
 		{496D457D-0079-4AE8-94D0-29B1D865CC74}.Publish|Any CPU.Build.0 = Debug|Any CPU
 		{496D457D-0079-4AE8-94D0-29B1D865CC74}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{496D457D-0079-4AE8-94D0-29B1D865CC74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{626940A8-4C5D-4A66-A76C-34CCBB8ED104}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{626940A8-4C5D-4A66-A76C-34CCBB8ED104}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{626940A8-4C5D-4A66-A76C-34CCBB8ED104}.Publish|Any CPU.ActiveCfg = Debug|Any CPU
+		{626940A8-4C5D-4A66-A76C-34CCBB8ED104}.Publish|Any CPU.Build.0 = Debug|Any CPU
+		{626940A8-4C5D-4A66-A76C-34CCBB8ED104}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{626940A8-4C5D-4A66-A76C-34CCBB8ED104}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -458,6 +466,7 @@ Global
 		{91AB22F7-23BC-46B5-A8DC-97F20BED4D63} = {FA3720F1-C99A-49B2-9577-A940257098BF}
 		{47C7A537-9A24-4E49-A191-E2B1D3351F13} = {FA3720F1-C99A-49B2-9577-A940257098BF}
 		{496D457D-0079-4AE8-94D0-29B1D865CC74} = {FA3720F1-C99A-49B2-9577-A940257098BF}
+		{626940A8-4C5D-4A66-A76C-34CCBB8ED104} = {FA3720F1-C99A-49B2-9577-A940257098BF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FBDC56A3-86AD-4323-AA0F-201E59123B83}
