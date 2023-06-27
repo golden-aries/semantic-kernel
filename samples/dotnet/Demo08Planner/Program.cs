@@ -1,4 +1,5 @@
-﻿using Microsoft.SemanticKernel;
+﻿using System.Text.Json;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Planning;
 using Plugins;
 
@@ -20,8 +21,9 @@ var planner = new SequentialPlanner(kernel);
 var ask = "I have $2130.23. How much would I have after it grew by 24% and after I spent $5 on a latte?";
 var plan = await planner.CreatePlanAsync(ask);
 
-// Console.WriteLine("Plan:\n");
-// Con sole.WriteLine(JsonSerializer.Serialize(plan, new JsonSerializerOptions { WriteIndented = true }));
+Console.WriteLine("Plan:\n");
+var serializedPlan = JsonSerializer.Serialize(plan, new JsonSerializerOptions { WriteIndented = true });
+//Console.WriteLine(serializedPlan);
 
 var result = await plan.InvokeAsync();
 
