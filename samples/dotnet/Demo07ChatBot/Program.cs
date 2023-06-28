@@ -27,17 +27,23 @@ Console.WriteLine("Done!");
 static async Task ChatBot(IKernel kernel, IDictionary<string, Microsoft.SemanticKernel.SkillDefinition.ISKFunction> skill)
 {
     var myContext = new ContextVariables();
-    var botPrompt = "AI: Hello. What's your name?";
+    var botPrompt = "AI: Hello there how can I help you?";
     var history = $"{botPrompt}\n";
-    const int numberOfRounds = 4;
+    //const int numberOfRounds = 4;
 
-    for (var i = 0; i < numberOfRounds; i++)
+    //for (var i = 0; i < numberOfRounds; i++)
+    while(true)
     {
         try
         {
             // get input from the user and set the context variable
-            Console.Write($"{botPrompt} ({(i + 1)} of {numberOfRounds})");
+            //Console.Write($"{botPrompt} ({(i + 1)} of {numberOfRounds})");
+            Console.WriteLine(botPrompt); Console.Write("Me: ");
             var input = Console.ReadLine() ?? throw new Exception("Empty input!");
+            if (input == "exit")
+            {
+                break;
+            }
             myContext.Set("input", input);
 
             // run the chat function
@@ -55,7 +61,7 @@ static async Task ChatBot(IKernel kernel, IDictionary<string, Microsoft.Semantic
             //Console.WriteLine($"Chat for {i + 1} of {numberOfRounds} rounds with AI:\n{history}");
 
             // prepare to "prompt" the user with the bot's response
-            botPrompt = $"AI: {myResult}";
+            botPrompt = $"AI: {myResult}:";
         }
         catch
         {
@@ -84,14 +90,19 @@ static async Task ChatBotWithPersonality(IKernel kernel, IDictionary<string, Mic
     myContext.Set("history", history);
     myContext.Set("personality", personality);
 
-    for (var i = 0; i < numberOfRounds; i++)
+    //for (var i = 0; i < numberOfRounds; i++)
+    while(true)
     {
         try
         {
             // get input from the user and set the context variable
             // get input from the user and set the context variable
-            Console.Write($"{botPrompt} ({(i + 1)} of {numberOfRounds})");
+            Console.WriteLine(botPrompt); Console.Write("Me: ");
             var input = Console.ReadLine() ?? throw new Exception("Empty input!");
+            if (input == "exit")
+            {
+                break;
+            }
             myContext.Set("input", input);
 
             // run the chat function
