@@ -21,11 +21,12 @@ var planner = new SequentialPlanner(kernel);
 var ask = "I have $2130.23. How much would I have after it grew by 24% and after I spent $5 on a latte?";
 var plan = await planner.CreatePlanAsync(ask);
 
-Console.WriteLine("Plan:\n");
 var serializedPlan = JsonSerializer.Serialize(plan, new JsonSerializerOptions { WriteIndented = true });
+//Console.WriteLine("Plan:\n");
 //Console.WriteLine(serializedPlan);
 
 var result = await plan.InvokeAsync();
+
 
 Console.WriteLine("Plan results:");
 Console.WriteLine(result.Result.Trim());
