@@ -5,8 +5,16 @@ using System.Threading.Tasks;
 
 public static class Program
 {
-    // ReSharper disable once InconsistentNaming
     public static async Task Main()
+    {
+        await Task.CompletedTask;
+
+        await Example13_ConversationSummarySkill.RunAsync();
+        Console.WriteLine("== DONE ==");
+    }
+
+    // ReSharper disable once InconsistentNaming
+    public static async Task MainOringinal()
     {
         Example01_NativeFunctions.Run();
         Console.WriteLine("== DONE ==");

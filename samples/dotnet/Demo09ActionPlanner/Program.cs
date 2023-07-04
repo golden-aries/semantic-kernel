@@ -1,9 +1,10 @@
-﻿using System.Reflection;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using System.Reflection;
 using System.Text.Json;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Orchestration;
 using Microsoft.SemanticKernel.Planning;
-using Plugins;
 
 var kernelSettings = KernelSettings.LoadSettings();
 IKernel kernel = new KernelBuilder()

@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.CoreSkills;
 using Microsoft.SemanticKernel.Orchestration;
@@ -123,8 +124,8 @@ Jane: Goodbye!
 
     public static async Task RunAsync()
     {
-        await ConversationSummarySkillAsync();
-        await GetConversationActionItemsAsync();
+        //await ConversationSummarySkillAsync();
+        //await GetConversationActionItemsAsync();
         await GetConversationTopicsAsync();
     }
 
@@ -180,10 +181,10 @@ Jane: Goodbye!
     {
         IKernel kernel = Kernel.Builder
             .WithLogger(ConsoleLogger.Log)
-            .WithAzureTextCompletionService(
-                Env.Var("AZURE_OPENAI_DEPLOYMENT_NAME"),
-                Env.Var("AZURE_OPENAI_ENDPOINT"),
-                Env.Var("AZURE_OPENAI_KEY"))
+              .WithAzureChatCompletionService(
+                  Env.Var("AZURE_OPENAI_DEPLOYMENT_NAME"),
+                  Env.Var("AZURE_OPENAI_ENDPOINT"),
+                  Env.Var("AZURE_OPENAI_KEY"))
         .Build();
 
         return kernel;
