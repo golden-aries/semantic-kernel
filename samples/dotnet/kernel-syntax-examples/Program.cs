@@ -9,7 +9,7 @@ public static class Program
     {
         await Task.CompletedTask;
 
-        await Example13_ConversationSummarySkill.RunAsync();
+        await Example21_ChatGptPlugins.RunAsync();
         Console.WriteLine("== DONE ==");
     }
 
