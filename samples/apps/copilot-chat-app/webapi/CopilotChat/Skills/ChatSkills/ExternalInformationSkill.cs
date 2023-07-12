@@ -121,19 +121,25 @@ public class ExternalInformationSkill
         {
             // Create a plan and set it in context for approval.
             var contextString = string.Join("\n", context.Variables.Where(v => v.Key != "userIntent").Select(v => $"{v.Key}: {v.Value}"));
-            Plan plan = await this._planner.CreatePlanAsync($"Given the following context, accomplish the user intent.\nContext:{contextString}\nUser Intent:{userIntent}");
-
-            if (plan.Steps.Count > 0)
+            try
             {
-                // Parameters stored in plan's top level state
-                this.MergeContextIntoPlan(context.Variables, plan.State);
+                Plan plan = await this._planner.CreatePlanAsync($"Given the following context, accomplish the user intent.\nContext:{contextString}\nUser Intent:{userIntent}");
 
-                // TODO: Improve Kernel to give developers option to skip this override 
-                // (i.e., keep functions regardless of whether they're available in the planner's context or not)
-                Plan sanitizedPlan = this.SanitizePlan(plan, context);
-                sanitizedPlan.State.Update(plan.State);
+                if (plan.Steps.Count > 0)
+                {
+                    // Parameters stored in plan's top level state
+                    this.MergeContextIntoPlan(context.Variables, plan.State);
 
-                this.ProposedPlan = new ProposedPlan(sanitizedPlan, this._planner.PlannerOptions!.Type, PlanState.NoOp);
+                    // TODO: Improve Kernel to give developers option to skip this override 
+                    // (i.e., keep functions regardless of whether they're available in the planner's context or not)
+                    Plan sanitizedPlan = this.SanitizePlan(plan, context);
+                    sanitizedPlan.State.Update(plan.State);
+
+                    this.ProposedPlan = new ProposedPlan(sanitizedPlan, this._planner.PlannerOptions!.Type, PlanState.NoOp);
+                }
+            }
+            catch (PlanningException)
+            {
             }
         }
 

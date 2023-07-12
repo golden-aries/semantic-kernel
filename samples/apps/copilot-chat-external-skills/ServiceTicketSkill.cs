@@ -18,5 +18,4 @@ public class ServiceTicketSkill
     {
         await Task.CompletedTask;
     }
-
 }

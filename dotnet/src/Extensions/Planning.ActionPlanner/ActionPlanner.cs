@@ -40,6 +40,8 @@ public sealed class ActionPlanner
     private readonly SKContext _context;
     private readonly IKernel _kernel;
     private readonly ILogger _logger;
+    // list of functions available in latest call
+    private volatile string? _listOfFunctionsInLatestCall;
 
     // TODO: allow to inject skill store
     /// <summary>
@@ -81,10 +83,11 @@ public sealed class ActionPlanner
         this._context.Variables.Update(goal);
 
         SKContext result = await this._plannerFunction.InvokeAsync(this._context).ConfigureAwait(false);
-
+        string? re = null;
         ActionPlanResponse? planData;
         try
         {
+            re = result?.ToString() ;
             planData = JsonSerializer.Deserialize<ActionPlanResponse?>(result.ToString(), new JsonSerializerOptions
             {
                 AllowTrailingCommas = true,
@@ -95,8 +98,12 @@ public sealed class ActionPlanner
         }
         catch (Exception e)
         {
-            throw new PlanningException(PlanningException.ErrorCodes.InvalidPlan,
+            var te = new PlanningException(PlanningException.ErrorCodes.InvalidPlan,
                 "Plan parsing error, invalid JSON", e);
+            te.Data.Add("goal", goal);
+            te.Data.Add("result", re ?? "null");
+            te.Data.Add("functions", this._listOfFunctionsInLatestCall ?? "null");
+            throw te;
         }
 
         if (planData == null)
@@ -153,8 +160,9 @@ public sealed class ActionPlanner
         var list = new StringBuilder();
         this.PopulateList(list, functionsAvailable.NativeFunctions);
         this.PopulateList(list, functionsAvailable.SemanticFunctions);
-
-        return list.ToString();
+        var result = list.ToString();
+        this._listOfFunctionsInLatestCall = result;
+        return result; ;
     }
 
     // TODO: generate string programmatically

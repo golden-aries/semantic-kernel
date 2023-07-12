@@ -31,6 +31,9 @@ public static class CopilotChatSemanticKernelExtensions
                 .WithPlannerBackend(sp.GetRequiredService<IOptions<AIServiceOptions>>().Value)
                 .Build();
             //plannerKernel.ImportSkill(new CopilotChatExternalSkills.ServiceTicketSkill());
+            plannerKernel.ImportSkill(
+                new CopilotChatExternalSkills.RandomSkills(),
+                nameof(CopilotChatExternalSkills.RandomSkills) );
             return new CopilotChatPlanner(plannerKernel, plannerOptions?.Value);
         });
 
