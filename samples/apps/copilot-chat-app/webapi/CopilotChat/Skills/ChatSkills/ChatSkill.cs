@@ -366,7 +366,8 @@ public class ChatSkill
         // If plan is suggested, send back to user for approval before running
         if (this._externalInformationSkill.ProposedPlan != null)
         {
-            return JsonSerializer.Serialize<ProposedPlan>(this._externalInformationSkill.ProposedPlan);
+            var result = JsonSerializer.Serialize<ProposedPlan>(this._externalInformationSkill.ProposedPlan);
+            return result;
         }
 
         // 4. Query relevant semantic memories

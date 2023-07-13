@@ -79,7 +79,9 @@ public class ExternalInformationSkill
 
         // Check if plan exists in ask's context variables.
         var planExists = context.Variables.TryGetValue("proposedPlan", out string? proposedPlanJson);
-        var deserializedPlan = planExists && !string.IsNullOrWhiteSpace(proposedPlanJson) ? JsonSerializer.Deserialize<ProposedPlan>(proposedPlanJson) : null;
+        var deserializedPlan = planExists
+            && !string.IsNullOrWhiteSpace(proposedPlanJson) ?
+                JsonSerializer.Deserialize<ProposedPlan>(proposedPlanJson) : null;
 
         // Run plan if it was approved
         if (deserializedPlan != null && deserializedPlan.State == PlanState.Approved)
@@ -94,7 +96,18 @@ public class ExternalInformationSkill
                 this._planner.Kernel.Log
             );
             var plan = Plan.FromJson(planJson, newPlanContext);
+            if (deserializedPlan.Type == PlanType.Action)
+            {
+                // action plan contains parameters on top level
+                foreach (var p in plan.Parameters)
+                {
+                    if (!string.Equals(p.Key, "INPUT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        newPlanContext.Variables.Set(p.Key, p.Value);
+                    }
 
+                }
+            }
             // Invoke plan
             newPlanContext = await plan.InvokeAsync(newPlanContext);
             int tokenLimit =
@@ -165,7 +178,9 @@ public class ExternalInformationSkill
             }
         }
 
-        return new Plan(plan.Description, sanitizedSteps.ToArray<Plan>());
+        var result = new Plan(plan.Description, sanitizedSteps.ToArray<Plan>());
+        result.Parameters = plan.Parameters;
+        return result;
     }
 
     /// <summary>

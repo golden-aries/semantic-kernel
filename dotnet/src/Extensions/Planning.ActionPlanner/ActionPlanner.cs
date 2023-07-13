@@ -87,7 +87,7 @@ public sealed class ActionPlanner
         ActionPlanResponse? planData;
         try
         {
-            re = result?.ToString() ;
+            re = result?.ToString();
             planData = JsonSerializer.Deserialize<ActionPlanResponse?>(result.ToString(), new JsonSerializerOptions
             {
                 AllowTrailingCommas = true,
