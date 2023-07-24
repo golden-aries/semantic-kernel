@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System.Threading.Tasks;
 using Microsoft.SemanticKernel.Orchestration;
 using Microsoft.SemanticKernel.SkillDefinition;
 
-namespace CopilotChatExternalSkills;
+namespace SemanticKernel.Service.CopilotChat.Skills;
 
 /// <summary>
 /// Skill related to filing ticket

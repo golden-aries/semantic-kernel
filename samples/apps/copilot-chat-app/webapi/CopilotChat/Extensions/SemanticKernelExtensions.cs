@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using SemanticKernel.Service.CopilotChat.Options;
+using SemanticKernel.Service.CopilotChat.Skills;
 using SemanticKernel.Service.CopilotChat.Skills.ChatSkills;
 using SemanticKernel.Service.CopilotChat.Storage;
 using SemanticKernel.Service.Options;
@@ -30,10 +31,10 @@ public static class CopilotChatSemanticKernelExtensions
                 // TODO verify planner has AI service configured
                 .WithPlannerBackend(sp.GetRequiredService<IOptions<AIServiceOptions>>().Value)
                 .Build();
-            //plannerKernel.ImportSkill(new CopilotChatExternalSkills.ServiceTicketSkill());
+            plannerKernel.ImportSkill(new ServiceTicketSkill());
             plannerKernel.ImportSkill(
                 new CopilotChatExternalSkills.RandomSkills(),
-                nameof(CopilotChatExternalSkills.RandomSkills) );
+                nameof(CopilotChatExternalSkills.RandomSkills));
             return new CopilotChatPlanner(plannerKernel, plannerOptions?.Value);
         });
 

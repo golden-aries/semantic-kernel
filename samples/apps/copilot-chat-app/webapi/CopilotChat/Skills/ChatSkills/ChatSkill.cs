@@ -17,6 +17,7 @@ using Microsoft.SemanticKernel.TemplateEngine;
 using SemanticKernel.Service.CopilotChat.Models;
 using SemanticKernel.Service.CopilotChat.Options;
 using SemanticKernel.Service.CopilotChat.Storage;
+using SemanticKernel.Service.Models;
 
 namespace SemanticKernel.Service.CopilotChat.Skills.ChatSkills;
 
@@ -90,7 +91,7 @@ public class ChatSkill
     }
 
     /// <summary>
-    /// Extract user intent from the conversation history.
+    /// Extract user ticketIntent from the conversation history.
     /// </summary>
     /// <param name="context">The SKContext.</param>
     [SKFunction("Extract user intent")]
@@ -203,7 +204,7 @@ public class ChatSkill
         {
             var formattedMessage = chatMessage.ToFormattedString();
 
-            // Plan object is not meaningful content in generating bot response, so shorten to intent only to save on tokens
+            // Plan object is not meaningful content in generating bot response, so shorten to ticketIntent only to save on tokens
             if (formattedMessage.Contains("proposedPlan\":", StringComparison.InvariantCultureIgnoreCase))
             {
                 string pattern = @"(\[.*?\]).*User Intent:User intent: (.*)(?=""}})";
@@ -326,6 +327,7 @@ public class ChatSkill
             this._promptOptions);
 
         context.Variables.Update(response);
+
         return context;
     }
 
@@ -339,13 +341,14 @@ public class ChatSkill
     private async Task<string> GetChatResponseAsync(SKContext chatContext)
     {
         // 0. Get the audience
-        var audience = await this.GetAudienceAsync(chatContext);
-        if (chatContext.ErrorOccurred)
-        {
-            return string.Empty;
-        }
+        //var audience = await this.GetAudienceAsync(chatContext);
+        //if (chatContext.ErrorOccurred)
+        //{
+        //    return string.Empty;
+        //}
+        var audience = chatContext["userName"]; ;
 
-        // 1. Extract user intent from the conversation history.
+        // 1. Extract user ticketIntent from the conversation history.
         var userIntent = await this.GetUserIntentAsync(chatContext);
         if (chatContext.ErrorOccurred)
         {
@@ -428,6 +431,22 @@ public class ChatSkill
             return string.Empty;
         }
 
+        //if (chatContext.Result.Contains(Signal.FileTicket, StringComparison.Ordinal) is true)
+        //{
+        //    string message = chatContext.Result.Replace(Signal.FileTicket, "", StringComparison.Ordinal);
+        //    this._externalInformationSkill.ImportSkill(new ServiceTicketSkill(), nameof(ServiceTicketSkill));
+        //    userIntent = $"{audience} wants to file a service ticket";
+        //    remainingToken = this.GetChatContextTokenLimit(userIntent);
+        //    planResult = await this.AcquireExternalInformationAsync(chatContext, userIntent, remainingToken);
+        //    // If plan is suggested, send back to user for approval before running
+        //    if (this._externalInformationSkill.ProposedPlan != null)
+        //    {
+        //        this._externalInformationSkill.ProposedPlan.Plan.Description = message + "\n" + this._externalInformationSkill.ProposedPlan.Plan.Description;
+        //        var result = JsonSerializer.Serialize<ProposedPlan>(this._externalInformationSkill.ProposedPlan);
+        //        return result;
+        //    }
+        //}
+
         return chatContext.Result;
     }
 
@@ -461,11 +480,11 @@ public class ChatSkill
 
     /// <summary>
     /// Helper function create the correct context variables to
-    /// extract user intent from the conversation history.
+    /// extract user ticketIntent from the conversation history.
     /// </summary>
     private async Task<string> GetUserIntentAsync(SKContext context)
     {
-        // TODO: Regenerate user intent if plan was modified
+        // TODO: Regenerate user ticketIntent if plan was modified
         if (!context.Variables.TryGetValue("planUserIntent", out string? userIntent))
         {
             var contextVariables = new ContextVariables();
@@ -690,7 +709,7 @@ public class ChatSkill
     }
 
     /// <summary>
-    /// Create a completion settings object for intent response. Parameters are read from the PromptSettings class.
+    /// Create a completion settings object for ticketIntent response. Parameters are read from the PromptSettings class.
     /// </summary>
     private CompleteRequestSettings CreateIntentCompletionSettings()
     {
@@ -709,9 +728,9 @@ public class ChatSkill
 
     /// <summary>
     /// Calculate the remaining token budget for the chat response prompt.
-    /// This is the token limit minus the token count of the user intent and the system commands.
+    /// This is the token limit minus the token count of the user ticketIntent and the system commands.
     /// </summary>
-    /// <param name="userIntent">The user intent returned by the model.</param>
+    /// <param name="userIntent">The user ticketIntent returned by the model.</param>
     /// <returns>The remaining token limit.</returns>
     private int GetChatContextTokenLimit(string userIntent)
     {

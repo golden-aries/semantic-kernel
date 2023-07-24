@@ -28,15 +28,16 @@ public class RandomSkills
         [Description("Date on which weather forecast is required")] string date)
     {
         await Task.CompletedTask;
-        return "24 celcius no rain";
+        return "24 Celsius no rain";
     }
 
-    [SKFunction("Get Stock price")]
+    [SKFunction("Get Stock Price")]
     [SKFunctionName("GetStock")]
-    [SKFunctionContextParameter(Name = "name", Description = "Stock name")]
-    public async Task<string> GetStockPriceAsync(SKContext context)
+    //[SKFunctionContextParameter(Name = "name", Description = "Stock name")]
+    public async Task<string> GetStockPriceAsync(
+        [Description("Stock name")] string name)
     {
         await Task.CompletedTask;
-        return "5";
+        return $"Stock price for  {name} is 5";
     }
 }

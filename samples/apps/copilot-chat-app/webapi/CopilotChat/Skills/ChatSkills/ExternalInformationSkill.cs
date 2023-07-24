@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel.Orchestration;
 using Microsoft.SemanticKernel.Planning;
+using Microsoft.SemanticKernel.Security;
 using Microsoft.SemanticKernel.SkillDefinition;
 using SemanticKernel.Service.CopilotChat.Models;
 using SemanticKernel.Service.CopilotChat.Options;
@@ -36,11 +37,6 @@ public class ExternalInformationSkill
     private readonly CopilotChatPlanner _planner;
 
     /// <summary>
-    /// Proposed plan to return for approval.
-    /// </summary>
-    public ProposedPlan? ProposedPlan { get; private set; }
-
-    /// <summary>
     /// Preamble to add to the related information text.
     /// </summary>
     private const string PromptPreamble = "[RELATED START]";
@@ -49,6 +45,13 @@ public class ExternalInformationSkill
     /// Postamble to add to the related information text.
     /// </summary>
     private const string PromptPostamble = "[RELATED END]";
+
+    #region Public
+
+    /// <summary>
+    /// Proposed plan to return for approval.
+    /// </summary>
+    public ProposedPlan? ProposedPlan { get; private set; }
 
     /// <summary>
     /// Create a new instance of ExternalInformationSkill.
@@ -158,6 +161,20 @@ public class ExternalInformationSkill
 
         return string.Empty;
     }
+
+    /// <summary>
+    /// Calls ImportSkills on Planner's kernel instance.
+    /// </summary>
+    /// <param name="skillInstance">Instance of a class containing functions</param>
+    /// <param name="skillName">Name of the skill for skill collection and prompt templates. If the value is empty functions are registered in the global namespace.</param>
+    /// <param name="trustService">Service used for trust checks (if null will use the default registered in the kernel).</param>
+    /// <returns>A list of all the semantic functions found in the directory, indexed by function name.</returns>
+    public IDictionary<string, ISKFunction> ImportSkill(object skillInstance, string? skillName = null, ITrustService? trustService = null)
+    {
+        return this._planner.Kernel.ImportSkill(skillInstance, skillName, trustService);
+    }
+
+    #endregion
 
     #region Private
 
