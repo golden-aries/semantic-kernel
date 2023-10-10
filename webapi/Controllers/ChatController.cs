@@ -34,6 +34,7 @@ using Microsoft.SemanticKernel.Skills.MsGraph.Connectors;
 using Microsoft.SemanticKernel.Skills.MsGraph.Connectors.Client;
 using Microsoft.SemanticKernel.Skills.OpenAPI.Authentication;
 using Microsoft.SemanticKernel.Skills.OpenAPI.Extensions;
+using Skills;
 
 namespace CopilotChat.WebApi.Controllers;
 
@@ -46,6 +47,7 @@ public class ChatController : ControllerBase, IDisposable
     private readonly ILogger<ChatController> _logger;
     private readonly List<IDisposable> _disposables;
     private readonly ITelemetryService _telemetryService;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ServiceOptions _serviceOptions;
     private readonly PlannerOptions _plannerOptions;
 
@@ -53,10 +55,16 @@ public class ChatController : ControllerBase, IDisposable
     private const string ChatFunctionName = "Chat";
     private const string GeneratingResponseClientCall = "ReceiveBotResponseStatus";
 
-    public ChatController(ILogger<ChatController> logger, ITelemetryService telemetryService, IOptions<ServiceOptions> serviceOptions, IOptions<PlannerOptions> plannerOptions)
+    public ChatController(
+        ILogger<ChatController> logger,
+        ITelemetryService telemetryService,
+        IOptions<ServiceOptions> serviceOptions,
+        IOptions<PlannerOptions> plannerOptions,
+        ILoggerFactory loggerFactory)
     {
         this._logger = logger;
         this._telemetryService = telemetryService;
+        this._loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         this._disposables = new List<IDisposable>();
         this._serviceOptions = serviceOptions.Value;
         this._plannerOptions = plannerOptions.Value;
@@ -208,7 +216,18 @@ public class ChatController : ControllerBase, IDisposable
     /// </summary>
     private async Task RegisterPlannerSkillsAsync(CopilotChatPlanner planner, Dictionary<string, string> openApiSkillsAuthHeaders, ContextVariables variables)
     {
-        // Register authenticated skills with the planner's kernel only if the request includes an auth header for the skill.
+        // Register authenticated Skills with the planner's kernel only if the request includes an auth header for the skill.
+        var skillInstance = new HelpDeskSkill();
+        var skillName = nameof(HelpDeskSkill);
+        MethodInfo[] methods = skillInstance.GetType().GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public);
+        foreach (MethodInfo method in methods)
+        {
+            if (method.GetCustomAttribute<SKFunctionAttribute>() != null)
+            {
+                ISKFunction function = SKFunction.FromNativeMethod(method, skillInstance, skillName, this._loggerFactory);
+                planner.Kernel.RegisterCustomFunction(function);
+            }
+        }
 
         // Klarna Shopping
         if (openApiSkillsAuthHeaders.TryGetValue("KLARNA", out string? KlarnaAuthHeader))

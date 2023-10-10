@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\shared\CopilotChatShared.csproj" />
+    <ProjectReference Include="..\skills\Skills.csproj" />
   </ItemGroup>
 
   <ItemGroup>
