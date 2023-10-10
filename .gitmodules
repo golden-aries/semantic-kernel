@@ -1,0 +1,3 @@
+[submodule "semantic-kernel"]
+	path = semantic-kernel
+	url = git@github.com:golden-aries/semantic-kernel.git
