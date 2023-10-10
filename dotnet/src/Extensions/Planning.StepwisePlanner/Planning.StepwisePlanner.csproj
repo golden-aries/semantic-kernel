@@ -14,7 +14,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\TemplateEngine.PromptTemplateEngine\TemplateEngine.PromptTemplateEngine.csproj" />
-    <ProjectReference Include="..\..\SemanticKernel.Abstractions\SemanticKernel.Abstractions.csproj" />
     <ProjectReference Include="..\..\SemanticKernel\SemanticKernel.csproj" />
   </ItemGroup>
   <ItemGroup>
