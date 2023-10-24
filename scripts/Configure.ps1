@@ -177,7 +177,7 @@ $appsettingsOverrides = @{
             Scopes   = $varScopes
         }
     };
-    Planner        = @{
+    Planner = @{
         Model = $PlannerModel
     };
     SemanticMemory = @{
@@ -189,6 +189,9 @@ $appsettingsOverrides = @{
             EmbeddingGeneratorType = $AIService
         };
         Services          = $AIServiceOverrides;
+    };
+    Frontend = @{
+        AadClientId = $FrontendClientId
     };
 }
 $appSettingsJson = -join ("appsettings.", $varASPNetCore, ".json");
@@ -213,14 +216,6 @@ $webappEnvFilePath = Join-Path "$webappProjectPath" '/.env'
 
 Write-Host "Setting up '.env'..."
 Set-Content -Path $webappEnvFilePath -Value "REACT_APP_BACKEND_URI=https://localhost:40443/"
-
-if ($authType -eq $varAzureAd) {
-    Write-Host "Configuring Azure AD authentication..."
-    Add-Content -Path $webappEnvFilePath -Value "REACT_APP_AUTH_TYPE=AzureAd"
-    Add-Content -Path $webappEnvFilePath -Value "REACT_APP_AAD_AUTHORITY=$($Instance.Trim("/"))/$TenantId"
-    Add-Content -Path $webappEnvFilePath -Value "REACT_APP_AAD_CLIENT_ID=$FrontendClientId"
-    Add-Content -Path $webappEnvFilePath -Value "REACT_APP_AAD_API_SCOPE=api://$BackendClientId/access_as_user"
-}
 
 Write-Host "($webappEnvFilePath)"
 Write-Host "========"

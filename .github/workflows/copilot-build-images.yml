@@ -6,14 +6,8 @@ on:
       REACT_APP_BACKEND_URI:
         required: true
         type: string
-      REACT_APP_AAD_AUTHORITY:
+      AZURE_FUNCTION_MASTER_KEY:
         required: true
-        type: string
-      REACT_APP_AAD_CLIENT_ID:
-        required: true
-        type: string
-      REACT_APP_AAD_API_SCOPE:
-        required: false
         type: string
 env:
   REGISTRY: ghcr.io
@@ -38,9 +32,16 @@ jobs:
             image: ${{ github.repository }}-webapp-nginx
             build-args: |
               REACT_APP_BACKEND_URI=${{ inputs.REACT_APP_BACKEND_URI }}
-              REACT_APP_AAD_AUTHORITY=${{ inputs.REACT_APP_AAD_AUTHORITY }}
-              REACT_APP_AAD_CLIENT_ID=${{ inputs.REACT_APP_AAD_CLIENT_ID }}
-              REACT_APP_AAD_API_SCOPE=${{ inputs.REACT_APP_AAD_API_SCOPE }}
+
+          - file: ./docker/plugins/web-searcher/Dockerfile
+            image: ${{ github.repository }}-web-searcher
+            build-args: |
+              AZURE_FUNCTION_MASTER_KEY=${{ inputs.AZURE_FUNCTION_MASTER_KEY }}
+
+          - file: ./docker/memorypipeline/Dockerfile
+            image: ${{ github.repository }}-memorypipeline
+            build-args: |
+
     permissions:
       contents: read
       packages: write
