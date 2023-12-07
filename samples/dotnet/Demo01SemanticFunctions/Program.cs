@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using DemoCommon;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using Demo01SemanticFunctions;
-using DemoCommon;
-using Json.More;
 
 
 var hab = Host.CreateApplicationBuilder(args);
@@ -45,13 +45,12 @@ Kernel kernel = builder
 //await Task.Delay(TimeSpan.FromDays(1));
 
 var appLifeTime = host.Services.GetRequiredService<IHostApplicationLifetime>(); // kernel.Services.GetRequiredService<IApplicationLifetime>();
-//var folder = RepoFiles.SamplePluginsPath();
-//var plugin = kernel.ImportPluginFromPromptDirectory(folder, "MiscPlugin");
-
-var folder = "C:\\src\\try\\sk\\Plugins\\MiscPlugin";
+string folder = RepoFiles.SamplePluginsPath();
+folder = Path.Combine(folder, "IntentDetectionPlugin");
 var plugin = kernel.ImportPluginFromPromptDirectory(folder);
 
-if (!plugin.TryGetFunction("DiscoverIntent", out var func))
+
+if (!plugin.TryGetFunction("AssistantIntent", out var func))
 {
     Console.WriteLine("Function nof found!");
     return;
