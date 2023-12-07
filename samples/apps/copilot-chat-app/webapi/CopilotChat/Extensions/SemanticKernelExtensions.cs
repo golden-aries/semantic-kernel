@@ -31,7 +31,7 @@ public static class CopilotChatSemanticKernelExtensions
                 // TODO verify planner has AI service configured
                 .WithPlannerBackend(sp.GetRequiredService<IOptions<AIServiceOptions>>().Value)
                 .Build();
-            plannerKernel.ImportSkill(new ServiceTicketSkill());
+            //plannerKernel.ImportSkill(new ServiceTicketSkill());
             plannerKernel.ImportSkill(
                 new CopilotChatExternalSkills.RandomSkills(),
                 nameof(CopilotChatExternalSkills.RandomSkills));

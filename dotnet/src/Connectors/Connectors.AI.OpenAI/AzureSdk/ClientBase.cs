@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure;
@@ -15,6 +16,8 @@ using Microsoft.SemanticKernel.AI.TextCompletion;
 using Microsoft.SemanticKernel.Connectors.AI.OpenAI.ChatCompletion;
 using Microsoft.SemanticKernel.Diagnostics;
 using Microsoft.SemanticKernel.Text;
+using PrivateTests;
+using TxExperiment;
 
 namespace Microsoft.SemanticKernel.Connectors.AI.OpenAI.AzureSdk;
 
@@ -165,8 +168,22 @@ public abstract class ClientBase
         {
             throw new OpenAIInvalidResponseException<ChatCompletions>(response.Value, "Chat completions not found");
         }
+        var rawResponse = response.GetRawResponse();
+        var dJson = JsonDocument.Parse(rawResponse.Content);
+        var str = dJson.ToJson();
+        var vJson = response.Value.ToJson();
+        var rJson = response.ToJson();
 
-        return response.Value.Choices.Select(chatChoice => new ChatResult(response.Value, chatChoice)).ToList();
+        var testJson = NewtonsoftTestFixture.Serialize(response.Value);
+        //var test = TxChatCompletionsSerializer.DeserializeChatCompletions()
+
+        //var testJson = NewtonsoftTestFixture.Serialize(response.Value);
+        //var test = NewtonsoftTestFixture.DeSerialize(testJson);
+        var result = response.Value.Choices.Select(chatChoice => new ChatResult(response.Value, chatChoice)).ToList();
+        //var testJson = NewtonsoftTest1.Serialize(result);
+        //var test = NewtonsoftTest1.DeSerialize(testJson);
+        return result;
+        // return response.Value.Choices.Select(chatChoice => new ChatResult(response.Value, chatChoice)).ToList();
     }
 
     /// <summary>
