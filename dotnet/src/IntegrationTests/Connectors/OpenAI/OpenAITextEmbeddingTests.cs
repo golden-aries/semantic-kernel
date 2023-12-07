@@ -46,7 +46,7 @@ public sealed class OpenAITextEmbeddingTests : IDisposable
         var batchResult = await embeddingGenerator.GenerateEmbeddingsAsync(new List<string> { testInputString, testInputString, testInputString });
 
         // Assert
-        Assert.Equal(AdaVectorLength, singleResult.Count);
+        Assert.Equal(AdaVectorLength, singleResult.Length);
         Assert.Equal(3, batchResult.Count);
     }
 
@@ -58,7 +58,8 @@ public sealed class OpenAITextEmbeddingTests : IDisposable
         AzureOpenAIConfiguration? azureOpenAIConfiguration = this._configuration.GetSection("AzureOpenAIEmbeddings").Get<AzureOpenAIConfiguration>();
         Assert.NotNull(azureOpenAIConfiguration);
 
-        var embeddingGenerator = new AzureTextEmbeddingGeneration(azureOpenAIConfiguration.DeploymentName,
+        var embeddingGenerator = new AzureOpenAITextEmbeddingGeneration(azureOpenAIConfiguration.DeploymentName,
+            azureOpenAIConfiguration.EmbeddingModelId,
             azureOpenAIConfiguration.Endpoint,
             azureOpenAIConfiguration.ApiKey);
 
@@ -67,7 +68,7 @@ public sealed class OpenAITextEmbeddingTests : IDisposable
         var batchResult = await embeddingGenerator.GenerateEmbeddingsAsync(new List<string> { testInputString, testInputString, testInputString });
 
         // Assert
-        Assert.Equal(AdaVectorLength, singleResult.Count);
+        Assert.Equal(AdaVectorLength, singleResult.Length);
         Assert.Equal(3, batchResult.Count);
     }
 

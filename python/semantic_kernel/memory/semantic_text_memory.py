@@ -2,6 +2,8 @@
 
 from typing import List, Optional
 
+from pydantic import PrivateAttr
+
 from semantic_kernel.connectors.ai.embeddings.embedding_generator_base import (
     EmbeddingGeneratorBase,
 )
@@ -12,8 +14,8 @@ from semantic_kernel.memory.semantic_text_memory_base import SemanticTextMemoryB
 
 
 class SemanticTextMemory(SemanticTextMemoryBase):
-    _storage: MemoryStoreBase
-    _embeddings_generator: EmbeddingGeneratorBase
+    _storage: MemoryStoreBase = PrivateAttr()
+    _embeddings_generator: EmbeddingGeneratorBase = PrivateAttr()
 
     def __init__(
         self, storage: MemoryStoreBase, embeddings_generator: EmbeddingGeneratorBase
@@ -28,6 +30,7 @@ class SemanticTextMemory(SemanticTextMemoryBase):
         Returns:
             None -- None.
         """
+        super().__init__()
         self._storage = storage
         self._embeddings_generator = embeddings_generator
 
@@ -56,7 +59,9 @@ class SemanticTextMemory(SemanticTextMemoryBase):
         ):
             await self._storage.create_collection_async(collection_name=collection)
 
-        embedding = await self._embeddings_generator.generate_embeddings_async([text])
+        embedding = (
+            await self._embeddings_generator.generate_embeddings_async([text])
+        )[0]
         data = MemoryRecord.local_record(
             id=id,
             text=text,
@@ -94,7 +99,9 @@ class SemanticTextMemory(SemanticTextMemoryBase):
         ):
             await self._storage.create_collection_async(collection_name=collection)
 
-        embedding = await self._embeddings_generator.generate_embeddings_async([text])
+        embedding = (
+            await self._embeddings_generator.generate_embeddings_async([text])
+        )[0]
         data = MemoryRecord.reference_record(
             external_id=external_id,
             source_name=external_source_name,
@@ -142,9 +149,9 @@ class SemanticTextMemory(SemanticTextMemoryBase):
         Returns:
             List[MemoryQueryResult] -- The list of MemoryQueryResult found.
         """
-        query_embedding = await self._embeddings_generator.generate_embeddings_async(
-            [query]
-        )
+        query_embedding = (
+            await self._embeddings_generator.generate_embeddings_async([query])
+        )[0]
         results = await self._storage.get_nearest_matches_async(
             collection_name=collection,
             embedding=query_embedding,

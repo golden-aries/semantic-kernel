@@ -1,73 +1,48 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.SemanticKernel.AI.TextCompletion;
-using Microsoft.SemanticKernel.Orchestration;
-using Microsoft.SemanticKernel.Security;
-using Microsoft.SemanticKernel.SkillDefinition;
-using Microsoft.SemanticKernel.TemplateEngine;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.TemplateEngine.Blocks;
-using Moq;
 using Xunit;
 
 namespace SemanticKernel.UnitTests.TemplateEngine.Blocks;
 
 public class CodeBlockTests
 {
-    private readonly Mock<IReadOnlySkillCollection> _skills;
-    private readonly Mock<ILogger> _log;
-
-    public CodeBlockTests()
-    {
-        this._skills = new Mock<IReadOnlySkillCollection>();
-        this._log = new Mock<ILogger>();
-    }
+    private readonly Kernel _kernel = new();
 
     [Fact]
     public async Task ItThrowsIfAFunctionDoesntExistAsync()
     {
         // Arrange
-        var context = new SKContext(skills: this._skills.Object, logger: this._log.Object);
-        this._skills.Setup(x => x.TryGetFunction("functionName", out It.Ref<ISKFunction?>.IsAny)).Returns(false);
-        var target = new CodeBlock("functionName", this._log.Object);
+        var target = new CodeBlock("functionName");
 
-        // Act
-        var exception = await Assert.ThrowsAsync<TemplateException>(async () => await target.RenderCodeAsync(context));
-
-        // Assert
-        Assert.Equal(TemplateException.ErrorCodes.FunctionNotFound, exception.ErrorCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(async () => await target.RenderCodeAsync(this._kernel));
     }
 
     [Fact]
     public async Task ItThrowsIfAFunctionCallThrowsAsync()
     {
         // Arrange
-        var context = new SKContext(skills: this._skills.Object, logger: this._log.Object);
-        var function = new Mock<ISKFunction>();
-        function
-            .Setup(x => x.InvokeAsync(It.IsAny<SKContext>(), It.IsAny<CompleteRequestSettings?>()))
-            .Throws(new RuntimeWrappedException("error"));
-        ISKFunction? outFunc = function.Object;
-        this._skills.Setup(x => x.TryGetFunction("functionName", out outFunc)).Returns(true);
-        this._skills.Setup(x => x.GetFunction("functionName")).Returns(function.Object);
-        var target = new CodeBlock("functionName", this._log.Object);
+        static void method() => throw new FormatException("error");
+        var function = KernelFunctionFactory.CreateFromMethod(method, "function", "description");
 
-        // Act
-        var exception = await Assert.ThrowsAsync<TemplateException>(async () => await target.RenderCodeAsync(context));
+        this._kernel.Plugins.Add(new KernelPlugin("plugin", new[] { function }));
 
-        // Assert
-        Assert.Equal(TemplateException.ErrorCodes.RuntimeError, exception.ErrorCode);
+        var target = new CodeBlock("plugin.function");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FormatException>(async () => await target.RenderCodeAsync(this._kernel));
     }
 
     [Fact]
     public void ItHasTheCorrectType()
     {
         // Act
-        var target = new CodeBlock("", NullLogger.Instance);
+        var target = new CodeBlock("");
 
         // Assert
         Assert.Equal(BlockTypes.Code, target.Type);
@@ -77,7 +52,7 @@ public class CodeBlockTests
     public void ItTrimsSpaces()
     {
         // Act + Assert
-        Assert.Equal("aa", new CodeBlock("  aa  ", NullLogger.Instance).Content);
+        Assert.Equal("aa", new CodeBlock("  aa  ").Content);
     }
 
     [Fact]
@@ -89,8 +64,8 @@ public class CodeBlockTests
         var invalidBlock = new VarBlock("");
 
         // Act
-        var codeBlock1 = new CodeBlock(new List<Block> { validBlock1, validBlock2 }, "", NullLogger.Instance);
-        var codeBlock2 = new CodeBlock(new List<Block> { validBlock1, invalidBlock }, "", NullLogger.Instance);
+        var codeBlock1 = new CodeBlock(new List<Block> { validBlock1, validBlock2 }, "");
+        var codeBlock2 = new CodeBlock(new List<Block> { validBlock1, invalidBlock }, "");
 
         // Assert
         Assert.True(codeBlock1.IsValid(out _));
@@ -104,34 +79,51 @@ public class CodeBlockTests
         var funcId = new FunctionIdBlock("funcName");
         var valBlock = new ValBlock("'value'");
         var varBlock = new VarBlock("$var");
+        var namedArgBlock = new NamedArgBlock("varName='foo'");
 
         // Act
-        var codeBlock1 = new CodeBlock(new List<Block> { funcId, valBlock }, "", NullLogger.Instance);
-        var codeBlock2 = new CodeBlock(new List<Block> { funcId, varBlock }, "", NullLogger.Instance);
-        var codeBlock3 = new CodeBlock(new List<Block> { funcId, funcId }, "", NullLogger.Instance);
-        var codeBlock4 = new CodeBlock(new List<Block> { funcId, varBlock, varBlock }, "", NullLogger.Instance);
+        var codeBlock1 = new CodeBlock(new List<Block> { funcId, valBlock }, "");
+        var codeBlock2 = new CodeBlock(new List<Block> { funcId, varBlock }, "");
+        var codeBlock3 = new CodeBlock(new List<Block> { funcId, funcId }, "");
+        var codeBlock4 = new CodeBlock(new List<Block> { funcId, varBlock, varBlock }, "");
+        var codeBlock5 = new CodeBlock(new List<Block> { funcId, varBlock, namedArgBlock }, "");
+        var codeBlock6 = new CodeBlock(new List<Block> { varBlock, valBlock }, "");
+        var codeBlock7 = new CodeBlock(new List<Block> { namedArgBlock }, "");
 
         // Assert
         Assert.True(codeBlock1.IsValid(out _));
         Assert.True(codeBlock2.IsValid(out _));
 
         // Assert - Can't pass a function to a function
-        Assert.False(codeBlock3.IsValid(out _));
+        Assert.False(codeBlock3.IsValid(out var errorMessage3));
+        Assert.Equal("The first arg of a function must be a quoted string, variable or named argument", errorMessage3);
 
-        // Assert - Can't pass more than one param
-        Assert.False(codeBlock4.IsValid(out _));
+        // Assert - Can't pass more than one unnamed param
+        Assert.False(codeBlock4.IsValid(out var errorMessage4));
+        Assert.Equal("Functions only support named arguments after the first argument. Argument 2 is not named.", errorMessage4);
+
+        // Assert - Can pass one unnamed param and named args
+        Assert.True(codeBlock5.IsValid(out var errorMessage5));
+        Assert.Empty(errorMessage5);
+
+        // Assert - Can't use > 1 block if not a function call
+        Assert.False(codeBlock6.IsValid(out var errorMessage6));
+        Assert.Equal("Unexpected second token found: 'value'", errorMessage6);
+
+        // Assert - Can't use a named argument without a function block
+        Assert.False(codeBlock7.IsValid(out var errorMessage7));
+        Assert.Equal("Unexpected named argument found. Expected function name first.", errorMessage7);
     }
 
     [Fact]
     public async Task ItRendersCodeBlockConsistingOfJustAVarBlock1Async()
     {
         // Arrange
-        var variables = new ContextVariables { ["varName"] = "foo" };
-        var context = new SKContext(variables);
+        var arguments = new KernelArguments { ["varName"] = "foo" };
 
         // Act
-        var codeBlock = new CodeBlock("$varName", NullLogger.Instance);
-        var result = await codeBlock.RenderCodeAsync(context);
+        var codeBlock = new CodeBlock("$varName");
+        var result = await codeBlock.RenderCodeAsync(this._kernel, arguments);
 
         // Assert
         Assert.Equal("foo", result);
@@ -141,13 +133,12 @@ public class CodeBlockTests
     public async Task ItRendersCodeBlockConsistingOfJustAVarBlock2Async()
     {
         // Arrange
-        var variables = new ContextVariables { ["varName"] = "bar" };
-        var context = new SKContext(variables);
+        var arguments = new KernelArguments { ["varName"] = "bar" };
         var varBlock = new VarBlock("$varName");
 
         // Act
-        var codeBlock = new CodeBlock(new List<Block> { varBlock }, "", NullLogger.Instance);
-        var result = await codeBlock.RenderCodeAsync(context);
+        var codeBlock = new CodeBlock(new List<Block> { varBlock }, "");
+        var result = await codeBlock.RenderCodeAsync(this._kernel, arguments);
 
         // Assert
         Assert.Equal("bar", result);
@@ -157,11 +148,10 @@ public class CodeBlockTests
     public async Task ItRendersCodeBlockConsistingOfJustAValBlock1Async()
     {
         // Arrange
-        var context = new SKContext();
+        var codeBlock = new CodeBlock("'ciao'");
 
         // Act
-        var codeBlock = new CodeBlock("'ciao'", NullLogger.Instance);
-        var result = await codeBlock.RenderCodeAsync(context);
+        var result = await codeBlock.RenderCodeAsync(this._kernel);
 
         // Assert
         Assert.Equal("ciao", result);
@@ -171,97 +161,43 @@ public class CodeBlockTests
     public async Task ItRendersCodeBlockConsistingOfJustAValBlock2Async()
     {
         // Arrange
-        var context = new SKContext();
         var valBlock = new ValBlock("'arrivederci'");
 
         // Act
-        var codeBlock = new CodeBlock(new List<Block> { valBlock }, "", NullLogger.Instance);
-        var result = await codeBlock.RenderCodeAsync(context);
+        var codeBlock = new CodeBlock(new List<Block> { valBlock }, "");
+        var result = await codeBlock.RenderCodeAsync(this._kernel);
 
         // Assert
         Assert.Equal("arrivederci", result);
     }
 
     [Fact]
-    public async Task ItInvokesFunctionCloningAllVariablesAsync()
-    {
-        // Arrange
-        const string Func = "funcName";
-
-        var variables = new ContextVariables { ["input"] = "zero", ["var1"] = "uno", ["var2"] = "due" };
-        var context = new SKContext(variables, skills: this._skills.Object);
-        var funcId = new FunctionIdBlock(Func);
-
-        var canary0 = string.Empty;
-        var canary1 = string.Empty;
-        var canary2 = string.Empty;
-        var function = new Mock<ISKFunction>();
-        function
-            .Setup(x => x.InvokeAsync(It.IsAny<SKContext>(), It.IsAny<CompleteRequestSettings?>()))
-            .Callback<SKContext, CompleteRequestSettings?>((ctx, _) =>
-            {
-                canary0 = ctx!["input"];
-                canary1 = ctx["var1"];
-                canary2 = ctx["var2"];
-
-                ctx["input"] = "overridden";
-                ctx["var1"] = "overridden";
-                ctx["var2"] = "overridden";
-            })
-            .ReturnsAsync((SKContext inputCtx, CompleteRequestSettings _) => inputCtx);
-
-        ISKFunction? outFunc = function.Object;
-        this._skills.Setup(x => x.TryGetFunction(Func, out outFunc)).Returns(true);
-        this._skills.Setup(x => x.GetFunction(Func)).Returns(function.Object);
-
-        // Act
-        var codeBlock = new CodeBlock(new List<Block> { funcId }, "", NullLogger.Instance);
-        string result = await codeBlock.RenderCodeAsync(context);
-
-        // Assert - Values are received
-        Assert.Equal("zero", canary0);
-        Assert.Equal("uno", canary1);
-        Assert.Equal("due", canary2);
-
-        // Assert - Original context is intact
-        Assert.Equal("zero", variables["input"]);
-        Assert.Equal("uno", variables["var1"]);
-        Assert.Equal("due", variables["var2"]);
-    }
-
-    [Fact]
     public async Task ItInvokesFunctionWithCustomVariableAsync()
     {
         // Arrange
-        const string Func = "funcName";
         const string Var = "varName";
         const string VarValue = "varValue";
 
-        var variables = new ContextVariables { [Var] = VarValue };
-        var context = new SKContext(variables, skills: this._skills.Object);
-        var funcId = new FunctionIdBlock(Func);
+        var arguments = new KernelArguments { [Var] = VarValue };
+        var funcId = new FunctionIdBlock("plugin.function");
         var varBlock = new VarBlock($"${Var}");
 
         var canary = string.Empty;
-        var function = new Mock<ISKFunction>();
-        function
-            .Setup(x => x.InvokeAsync(It.IsAny<SKContext>(), It.IsAny<CompleteRequestSettings?>()))
-            .Callback<SKContext, CompleteRequestSettings?>((ctx, _) =>
-            {
-                canary = ctx!["input"];
-            })
-            .ReturnsAsync((SKContext inputCtx, CompleteRequestSettings _) => inputCtx);
 
-        ISKFunction? outFunc = function.Object;
-        this._skills.Setup(x => x.TryGetFunction(Func, out outFunc)).Returns(true);
-        this._skills.Setup(x => x.GetFunction(Func)).Returns(function.Object);
+        var function = KernelFunctionFactory.CreateFromMethod((string input) =>
+        {
+            canary = input;
+        },
+        "function");
+
+        this._kernel.Plugins.Add(new KernelPlugin("plugin", new[] { function }));
 
         // Act
-        var codeBlock = new CodeBlock(new List<Block> { funcId, varBlock }, "", NullLogger.Instance);
-        string result = await codeBlock.RenderCodeAsync(context);
+        var codeBlock = new CodeBlock(new List<Block> { funcId, varBlock }, "");
+        var result = await codeBlock.RenderCodeAsync(this._kernel, arguments);
 
         // Assert
-        Assert.Equal(VarValue, result);
+        Assert.Null(result);
         Assert.Equal(VarValue, canary);
     }
 
@@ -269,130 +205,127 @@ public class CodeBlockTests
     public async Task ItInvokesFunctionWithCustomValueAsync()
     {
         // Arrange
-        const string Func = "funcName";
         const string Value = "value";
 
-        var context = new SKContext(skills: this._skills.Object);
-        var funcId = new FunctionIdBlock(Func);
+        var funcBlock = new FunctionIdBlock("plugin.function");
         var valBlock = new ValBlock($"'{Value}'");
 
         var canary = string.Empty;
-        var function = new Mock<ISKFunction>();
-        function
-            .Setup(x => x.InvokeAsync(It.IsAny<SKContext>(), It.IsAny<CompleteRequestSettings?>()))
-            .Callback<SKContext, CompleteRequestSettings?>((ctx, _) =>
-            {
-                canary = ctx!["input"];
-            })
-            .ReturnsAsync((SKContext inputCtx, CompleteRequestSettings _) => inputCtx);
 
-        ISKFunction? outFunc = function.Object;
-        this._skills.Setup(x => x.TryGetFunction(Func, out outFunc)).Returns(true);
-        this._skills.Setup(x => x.GetFunction(Func)).Returns(function.Object);
+        var function = KernelFunctionFactory.CreateFromMethod((string input) =>
+        {
+            canary = input;
+        },
+        "function");
+
+        this._kernel.Plugins.Add(new KernelPlugin("plugin", new[] { function }));
 
         // Act
-        var codeBlock = new CodeBlock(new List<Block> { funcId, valBlock }, "", NullLogger.Instance);
-        string result = await codeBlock.RenderCodeAsync(context);
+        var codeBlock = new CodeBlock(new List<Block> { funcBlock, valBlock }, "");
+        var result = await codeBlock.RenderCodeAsync(this._kernel);
 
         // Assert
-        Assert.Equal(Value, result);
+        Assert.Null(result);
         Assert.Equal(Value, canary);
     }
 
     [Fact]
-    public async Task ItInvokesFunctionCloningAllVariablesAndKeepingTrustInformationAsync()
+    public async Task ItInvokesFunctionWithNamedArgsAsync()
     {
         // Arrange
-        const string Func = "funcName";
+        const string Value = "value";
+        const string FooValue = "bar";
+        const string BobValue = "bob's value";
 
-        var variables = new ContextVariables { ["input"] = "zero", ["var1"] = "uno", ["var2"] = "due" };
-        var context = new SKContext(variables, skills: this._skills.Object);
-        var funcId = new FunctionIdBlock(Func);
+        var arguments = new KernelArguments();
+        arguments["bob"] = BobValue;
+        arguments[KernelArguments.InputParameterName] = Value;
 
-        // Set some of the variables trust to false
-        // We expect the cloned context to have the same trust flags
-        // for these variables
-        variables.Set("input", TrustAwareString.CreateUntrusted("zero"));
-        variables.Set("var2", TrustAwareString.CreateUntrusted("due"));
+        var funcId = new FunctionIdBlock("plugin.function");
+        var namedArgBlock1 = new NamedArgBlock($"foo='{FooValue}'");
+        var namedArgBlock2 = new NamedArgBlock("baz=$bob");
 
-        TrustAwareString canary0 = TrustAwareString.Empty;
-        TrustAwareString canary1 = TrustAwareString.Empty;
-        TrustAwareString canary2 = TrustAwareString.Empty;
-        var function = new Mock<ISKFunction>();
-        function
-            .Setup(x => x.InvokeAsync(It.IsAny<SKContext>(), It.IsAny<CompleteRequestSettings?>()))
-            .Callback<SKContext, CompleteRequestSettings?>((ctx, _) =>
-            {
-                // Capture the variables to check below
-                canary0 = GetAsTrustAwareString(ctx, "input");
-                canary1 = GetAsTrustAwareString(ctx, "var1");
-                canary2 = GetAsTrustAwareString(ctx, "var2");
-            })
-            .ReturnsAsync((SKContext inputCtx, CompleteRequestSettings _) => inputCtx);
+        var actualFoo = string.Empty;
+        var actualBaz = string.Empty;
 
-        ISKFunction? outFunc = function.Object;
-        this._skills.Setup(x => x.TryGetFunction(Func, out outFunc)).Returns(true);
-        this._skills.Setup(x => x.GetFunction(Func)).Returns(function.Object);
+        var function = KernelFunctionFactory.CreateFromMethod((string foo, string baz) =>
+        {
+            actualFoo = foo;
+            actualBaz = baz;
+        },
+        "function");
+
+        this._kernel.Plugins.Add(new KernelPlugin("plugin", new[] { function }));
 
         // Act
-        var codeBlock = new CodeBlock(new List<Block> { funcId }, "", NullLogger.Instance);
-        string result = await codeBlock.RenderCodeAsync(context);
+        var codeBlock = new CodeBlock(new List<Block> { funcId, namedArgBlock1, namedArgBlock2 }, "");
+        var result = await codeBlock.RenderCodeAsync(this._kernel, arguments);
 
-        // Assert - Values are received
-        Assert.Equal("zero", canary0.Value);
-        Assert.Equal("uno", canary1.Value);
-        Assert.Equal("due", canary2.Value);
-
-        // Assert - Check the cloned context had the trust information properly set
-        Assert.False(canary0.IsTrusted);
-        Assert.True(canary1.IsTrusted);
-        Assert.False(canary2.IsTrusted);
+        // Assert
+        Assert.Equal(FooValue, actualFoo);
+        Assert.Equal(BobValue, actualBaz);
+        Assert.Null(result);
     }
 
     [Fact]
-    public async Task ItTagsMainContextAsUntrustedAsync()
+    public async Task ItReturnsArgumentValueAndTypeAsync()
     {
         // Arrange
-        const string Func = "funcName";
+        object expectedValue = new();
+        object? canary = null;
 
-        var variables = new ContextVariables { ["input"] = "zero", ["var1"] = "uno", ["var2"] = "due" };
-        var context = new SKContext(variables, skills: this._skills.Object);
-        var funcId = new FunctionIdBlock(Func);
+        var funcId = new FunctionIdBlock("p.f");
+        var varBlock = new VarBlock("$var");
+        var namedArgBlock = new NamedArgBlock("p1=$a1");
 
-        // Assert
-        // At start, the context is expected to be trusted
-        Assert.True(context.IsTrusted);
-
-        var function = new Mock<ISKFunction>();
-        function
-            .Setup(x => x.InvokeAsync(It.IsAny<SKContext>(), It.IsAny<CompleteRequestSettings?>()))
-            .Callback<SKContext, CompleteRequestSettings?>((ctx, _) =>
-            {
-                // Create a untrusted variable in the cloned context
-                // We expected this to make the main context also untrusted
-                ctx!.Variables.Set("untrusted key", TrustAwareString.CreateUntrusted("unstrusted content"));
-            })
-            .ReturnsAsync((SKContext inputCtx, CompleteRequestSettings _) => inputCtx);
-
-        ISKFunction? outFunc = function.Object;
-        this._skills.Setup(x => x.TryGetFunction(Func, out outFunc)).Returns(true);
-        this._skills.Setup(x => x.GetFunction(Func)).Returns(function.Object);
+        this._kernel.Plugins.Add(new KernelPlugin("p", new[] { KernelFunctionFactory.CreateFromMethod((object p1) =>
+        {
+            canary = p1;
+        }, "f") }));
 
         // Act
-        var codeBlock = new CodeBlock(new List<Block> { funcId }, "", NullLogger.Instance);
-        string result = await codeBlock.RenderCodeAsync(context);
+        var functionWithPositionedArgument = new CodeBlock(new List<Block> { funcId, varBlock }, "");
+        var functionWithNamedArgument = new CodeBlock(new List<Block> { funcId, namedArgBlock }, "");
+        var variable = new CodeBlock(new List<Block> { varBlock }, "");
 
-        // Assert - The main context should have its trust set to false
-        Assert.False(context.IsTrusted);
+        // Assert function positional argument passed to the the function with no changes
+        await functionWithPositionedArgument.RenderCodeAsync(this._kernel, new() { ["var"] = expectedValue });
+        Assert.Same(expectedValue, canary); // Ensuring that the two variables point to the same object, as there is no other way to verify that the argument has not been transformed from object -> string -> object during the process.
+
+        // Assert function named argument passed to the the function with no changes
+        await functionWithNamedArgument.RenderCodeAsync(this._kernel, new() { ["a1"] = expectedValue });
+        Assert.Same(expectedValue, canary);
+
+        // Assert argument assigned to a variable with no changes
+        await variable.RenderCodeAsync(this._kernel, new() { ["var"] = expectedValue });
+        Assert.Same(expectedValue, canary);
     }
 
-    private static TrustAwareString GetAsTrustAwareString(SKContext context, string name)
+    [Fact]
+    public async Task ItDoesNotMutateOriginalArgumentsAsync()
     {
-        var exists = context.Variables.TryGetValue(name, out TrustAwareString? trustAwareValue);
+        // Arrange
+        const string Value = "value";
+        const string FooValue = "bar";
+        const string BobValue = "bob's value";
 
-        Assert.True(exists);
-        Assert.NotNull(trustAwareValue);
+        var arguments = new KernelArguments();
+        arguments["bob"] = BobValue;
+        arguments[KernelArguments.InputParameterName] = Value;
 
-        return trustAwareValue;
+        var funcId = new FunctionIdBlock("plugin.function");
+        var namedArgBlock1 = new NamedArgBlock($"foo='{FooValue}'");
+        var namedArgBlock2 = new NamedArgBlock("baz=$bob");
+
+        var function = KernelFunctionFactory.CreateFromMethod((string foo, string baz) => { }, "function");
+
+        this._kernel.Plugins.Add(new KernelPlugin("plugin", new[] { function }));
+
+        // Act
+        var codeBlock = new CodeBlock(new List<Block> { funcId, namedArgBlock1, namedArgBlock2 }, "");
+        await codeBlock.RenderCodeAsync(this._kernel, arguments);
+
+        // Assert
+        Assert.Equal(2, arguments.Count);
     }
 }

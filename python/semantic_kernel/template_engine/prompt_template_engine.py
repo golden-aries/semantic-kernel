@@ -1,26 +1,34 @@
 # Copyright (c) Microsoft. All rights reserved.
 
 from logging import Logger
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
+
+from pydantic import PrivateAttr
 
 from semantic_kernel.orchestration.context_variables import ContextVariables
-from semantic_kernel.orchestration.sk_context import SKContext
+from semantic_kernel.sk_pydantic import SKBaseModel
 from semantic_kernel.template_engine.blocks.block import Block
 from semantic_kernel.template_engine.blocks.block_types import BlockTypes
-from semantic_kernel.template_engine.blocks.text_block import TextBlock
-from semantic_kernel.template_engine.protocols.code_renderer import CodeRenderer
-from semantic_kernel.template_engine.protocols.prompt_templating_engine import (
-    PromptTemplatingEngine,
-)
 from semantic_kernel.template_engine.protocols.text_renderer import TextRenderer
 from semantic_kernel.template_engine.template_tokenizer import TemplateTokenizer
 from semantic_kernel.utils.null_logger import NullLogger
 
+if TYPE_CHECKING:
+    from semantic_kernel.orchestration.sk_context import SKContext
 
-class PromptTemplateEngine(PromptTemplatingEngine):
+
+class PromptTemplateEngine(SKBaseModel):
+    _log: Optional[Logger] = PrivateAttr(default_factory=NullLogger)
+    _tokenizer: TemplateTokenizer = PrivateAttr()
+
     def __init__(self, logger: Optional[Logger] = None) -> None:
-        self._logger = logger or NullLogger()
-        self._tokenizer = TemplateTokenizer(self._logger)
+        super().__init__()
+        self._log = logger or NullLogger()
+        self._tokenizer = TemplateTokenizer(log=self.log)
+
+    @property
+    def log(self) -> Logger:
+        return self._log
 
     def extract_blocks(
         self, template_text: Optional[str] = None, validate: bool = True
@@ -35,7 +43,7 @@ class PromptTemplateEngine(PromptTemplatingEngine):
         :return: A list of all the blocks, ie the template tokenized in
             text, variables and function calls
         """
-        self._logger.debug(f"Extracting blocks from template: {template_text}")
+        self.log.debug(f"Extracting blocks from template: {template_text}")
         blocks = self._tokenizer.tokenize(template_text)
 
         if validate:
@@ -46,7 +54,7 @@ class PromptTemplateEngine(PromptTemplatingEngine):
 
         return blocks
 
-    async def render_async(self, template_text: str, context: SKContext) -> str:
+    async def render_async(self, template_text: str, context: "SKContext") -> str:
         """
         Given a prompt template, replace the variables with their values
         and execute the functions replacing their reference with the
@@ -56,11 +64,13 @@ class PromptTemplateEngine(PromptTemplatingEngine):
         :param context: Access into the current kernel execution context
         :return: The prompt template ready to be used for an AI request
         """
-        self._logger.debug(f"Rendering string template: {template_text}")
+        self.log.debug(f"Rendering string template: {template_text}")
         blocks = self.extract_blocks(template_text)
         return await self.render_blocks_async(blocks, context)
 
-    async def render_blocks_async(self, blocks: List[Block], context: SKContext) -> str:
+    async def render_blocks_async(
+        self, blocks: List[Block], context: "SKContext"
+    ) -> str:
         """
         Given a list of blocks render each block and compose the final result.
 
@@ -68,7 +78,9 @@ class PromptTemplateEngine(PromptTemplatingEngine):
         :param context: Access into the current kernel execution context
         :return: The prompt template ready to be used for an AI request
         """
-        self._logger.debug(f"Rendering list of {len(blocks)} blocks")
+        from semantic_kernel.template_engine.protocols.code_renderer import CodeRenderer
+
+        self.log.debug(f"Rendering list of {len(blocks)} blocks")
         rendered_blocks = []
         for block in blocks:
             if isinstance(block, TextRenderer):
@@ -80,10 +92,10 @@ class PromptTemplateEngine(PromptTemplatingEngine):
                     "unexpected block type, the block doesn't have a rendering "
                     "protocol assigned to it"
                 )
-                self._logger.error(error)
+                self.log.error(error)
                 raise ValueError(error)
 
-        self._logger.debug(f"Rendered prompt: {''.join(rendered_blocks)}")
+        self.log.debug(f"Rendered prompt: {''.join(rendered_blocks)}")
         return "".join(rendered_blocks)
 
     def render_variables(
@@ -98,7 +110,9 @@ class PromptTemplateEngine(PromptTemplatingEngine):
         :return: An updated list of blocks where Variable Blocks have rendered to
             Text Blocks
         """
-        self._logger.debug("Rendering variables")
+        from semantic_kernel.template_engine.blocks.text_block import TextBlock
+
+        self.log.debug("Rendering variables")
 
         rendered_blocks = []
         for block in blocks:
@@ -107,12 +121,14 @@ class PromptTemplateEngine(PromptTemplatingEngine):
                 continue
             if not isinstance(block, TextRenderer):
                 raise ValueError("TextBlock must implement TextRenderer protocol")
-            rendered_blocks.append(TextBlock(block.render(variables), log=self._logger))
+            rendered_blocks.append(
+                TextBlock.from_text(block.render(variables), log=self.log)
+            )
 
         return rendered_blocks
 
     async def render_code_async(
-        self, blocks: List[Block], execution_context: SKContext
+        self, blocks: List[Block], execution_context: "SKContext"
     ) -> List[Block]:
         """
         Given a list of blocks, render the Code Blocks, executing the
@@ -123,7 +139,10 @@ class PromptTemplateEngine(PromptTemplatingEngine):
         :return: An updated list of blocks where Code Blocks have rendered to
             Text Blocks
         """
-        self._logger.debug("Rendering code")
+        from semantic_kernel.template_engine.blocks.text_block import TextBlock
+        from semantic_kernel.template_engine.protocols.code_renderer import CodeRenderer
+
+        self.log.debug("Rendering code")
 
         rendered_blocks = []
         for block in blocks:
@@ -133,8 +152,8 @@ class PromptTemplateEngine(PromptTemplatingEngine):
             if not isinstance(block, CodeRenderer):
                 raise ValueError("CodeBlock must implement CodeRenderer protocol")
             rendered_blocks.append(
-                TextBlock(
-                    await block.render_code_async(execution_context), log=self._logger
+                TextBlock.from_text(
+                    await block.render_code_async(execution_context), log=self.log
                 )
             )
 

@@ -27,5 +27,12 @@
   },
   "Bing": {
     "ApiKey": ""
+  },
+  "Postgres": {
+    "ConnectionString": ""
+  },
+  "MongoDB": {
+    "ConnectionString": "",
+    "VectorSearchCollection": "dotnetMSKNearestTest.nearestSearch"
   }
 }

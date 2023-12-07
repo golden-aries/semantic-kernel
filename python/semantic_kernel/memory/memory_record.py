@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 
+from datetime import datetime
 from typing import Optional
 
 from numpy import ndarray
@@ -7,7 +8,7 @@ from numpy import ndarray
 
 class MemoryRecord:
     _key: str
-    _timestamp: str
+    _timestamp: Optional[datetime]
     _is_reference: bool
     _external_source_name: Optional[str]
     _id: str
@@ -26,7 +27,7 @@ class MemoryRecord:
         additional_metadata: Optional[str],
         embedding: Optional[ndarray],
         key: Optional[str] = None,
-        timestamp: Optional[str] = None,
+        timestamp: Optional[datetime] = None,
     ) -> None:
         """Initialize a new instance of MemoryRecord.
 
@@ -51,10 +52,6 @@ class MemoryRecord:
         self._text = text
         self._additional_metadata = additional_metadata
         self._embedding = embedding
-
-    @property
-    def embedding(self) -> ndarray:
-        return self._embedding
 
     @staticmethod
     def reference_record(
@@ -93,6 +90,7 @@ class MemoryRecord:
         description: Optional[str],
         additional_metadata: Optional[str],
         embedding: ndarray,
+        timestamp: Optional[datetime] = None,
     ) -> "MemoryRecord":
         """Create a local record.
 
@@ -102,6 +100,7 @@ class MemoryRecord:
             description {Optional[str]} -- The description of the record.
             additional_metadata {Optional[str]} -- Custom metadata for the record.
             embedding {ndarray} -- The embedding of the record.
+            timestamp {Optional[datetime]} -- The timestamp of the record.
 
         Returns:
             MemoryRecord -- The local record.
@@ -113,5 +112,30 @@ class MemoryRecord:
             description=description,
             text=text,
             additional_metadata=additional_metadata,
+            timestamp=timestamp,
             embedding=embedding,
         )
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def embedding(self) -> ndarray:
+        return self._embedding
+
+    @property
+    def text(self):
+        return self._text
+
+    @property
+    def additional_metadata(self):
+        return self._additional_metadata
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def timestamp(self):
+        return self._timestamp

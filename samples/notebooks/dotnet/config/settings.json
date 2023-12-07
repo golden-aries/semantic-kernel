@@ -1,0 +1,7 @@
+{
+  "type": "azure",
+  "model": "telexy-open-appi-test-deployment",
+  "endpoint": "https://telexy-open-appi-test.openai.azure.com",
+  "apikey": "198599499cd04a04951a27589c0294c6",
+  "org": ""
+}

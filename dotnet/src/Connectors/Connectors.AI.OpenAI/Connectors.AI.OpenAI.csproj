@@ -16,29 +16,16 @@
   <PropertyGroup>
     <!-- NuGet Package Settings -->
     <Title>Semantic Kernel - OpenAI and Azure OpenAI connectors</Title>
-    <Description>Semantic Kernel connectors for OpenAI and Azure OpenAI. Contains clients for text completion, chat completion, embedding and DALL-E image generation.</Description>
+    <Description>Semantic Kernel connectors for OpenAI and Azure OpenAI. Contains clients for text generation, chat completion, embedding and DALL-E text to image.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SemanticKernel\SemanticKernel.csproj" />
-    <ProjectReference Include="..\..\TxExperiment\TxExperiment.csproj" />
+    <ProjectReference Include="..\..\Plugins\Plugins.Memory\Plugins.Memory.csproj" />
+    <ProjectReference Include="..\..\SemanticKernel.Core\SemanticKernel.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Azure.AI.OpenAI" />
+    <PackageReference Include="JsonSchema.Net.Generation" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Tokenizers\Settings\encoder.json" />
-    <Content Include="Tokenizers\Settings\encoder.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
-    </Content>
-    <None Remove="Tokenizers\Settings\vocab.bpe" />
-    <Content Include="Tokenizers\Settings\vocab.bpe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
-    </Content>
-  </ItemGroup>
-
 </Project>

@@ -22,6 +22,7 @@ from semantic_kernel.connectors.ai.embeddings.embedding_generator_base import (
 from semantic_kernel.connectors.ai.text_completion_client_base import (
     TextCompletionClientBase,
 )
+from semantic_kernel.events import FunctionInvokedEventArgs, FunctionInvokingEventArgs
 from semantic_kernel.kernel_exception import KernelException
 from semantic_kernel.memory.memory_store_base import MemoryStoreBase
 from semantic_kernel.memory.null_memory import NullMemory
@@ -42,6 +43,7 @@ from semantic_kernel.semantic_functions.prompt_template_config import (
 from semantic_kernel.semantic_functions.semantic_function_config import (
     SemanticFunctionConfig,
 )
+from semantic_kernel.skill_definition.function_view import FunctionView
 from semantic_kernel.skill_definition.read_only_skill_collection_base import (
     ReadOnlySkillCollectionBase,
 )
@@ -97,6 +99,9 @@ class Kernel:
 
         self._retry_mechanism: RetryMechanismBase = PassThroughWithoutRetry()
 
+        self._function_invoking_handlers = {}
+        self._function_invoked_handlers = {}
+
     @property
     def logger(self) -> Logger:
         return self._log
@@ -133,27 +138,138 @@ class Kernel:
 
         return function
 
+    def register_native_function(
+        self,
+        skill_name: Optional[str],
+        sk_function: Callable,
+    ) -> SKFunctionBase:
+        if not hasattr(sk_function, "__sk_function__"):
+            raise KernelException(
+                KernelException.ErrorCodes.InvalidFunctionType,
+                "sk_function argument must be decorated with @sk_function",
+            )
+        function_name = sk_function.__sk_function_name__
+
+        if skill_name is None or skill_name == "":
+            skill_name = SkillCollection.GLOBAL_SKILL
+        assert skill_name is not None  # for type checker
+
+        validate_skill_name(skill_name)
+        validate_function_name(function_name)
+
+        function = SKFunction.from_native_method(sk_function, skill_name, self.logger)
+
+        if self.skills.has_function(skill_name, function_name):
+            raise KernelException(
+                KernelException.ErrorCodes.FunctionOverloadNotSupported,
+                "Overloaded functions are not supported, "
+                "please differentiate function names.",
+            )
+
+        function.set_default_skill_collection(self.skills)
+        self._skill_collection.add_native_function(function)
+
+        return function
+
+    async def run_stream_async(
+        self,
+        *functions: Any,
+        input_context: Optional[SKContext] = None,
+        input_vars: Optional[ContextVariables] = None,
+        input_str: Optional[str] = None,
+    ):
+        if len(functions) > 1:
+            pipeline_functions = functions[:-1]
+            stream_function = functions[-1]
+
+            # run pipeline functions
+            context = await self.run_async(
+                pipeline_functions, input_context, input_vars, input_str
+            )
+
+        elif len(functions) == 1:
+            stream_function = functions[0]
+
+            # TODO: Preparing context for function invoke can be refactored as code below are same as run_async
+            # if the user passed in a context, prioritize it, but merge with any other inputs
+            if input_context is not None:
+                context = input_context
+                if input_vars is not None:
+                    context.variables = input_vars.merge_or_overwrite(
+                        new_vars=context.variables, overwrite=False
+                    )
+
+                if input_str is not None:
+                    context.variables = ContextVariables(input_str).merge_or_overwrite(
+                        new_vars=context.variables, overwrite=False
+                    )
+
+            # if the user did not pass in a context, prioritize an input string,
+            # and merge that with input context variables
+            else:
+                if input_str is not None and input_vars is None:
+                    variables = ContextVariables(input_str)
+                elif input_str is None and input_vars is not None:
+                    variables = input_vars
+                elif input_str is not None and input_vars is not None:
+                    variables = ContextVariables(input_str)
+                    variables = variables.merge_or_overwrite(
+                        new_vars=input_vars, overwrite=False
+                    )
+                else:
+                    variables = ContextVariables()
+                context = SKContext(
+                    variables,
+                    self._memory,
+                    self._skill_collection.read_only_skill_collection,
+                    self._log,
+                )
+        else:
+            raise ValueError("No functions passed to run")
+
+        try:
+            completion = ""
+            async for stream_message in stream_function.invoke_stream_async(
+                input=None, context=context
+            ):
+                completion += stream_message
+                yield stream_message
+
+        except Exception as ex:
+            # TODO: "critical exceptions"
+            self._log.error(
+                "Something went wrong in stream function. During function invocation:"
+                f" '{stream_function.skill_name}.{stream_function.name}'. Error"
+                f" description: '{str(ex)}'"
+            )
+            raise KernelException(
+                KernelException.ErrorCodes.FunctionInvokeError,
+                "Error occurred while invoking stream function",
+            )
+
     async def run_async(
         self,
         *functions: Any,
         input_context: Optional[SKContext] = None,
         input_vars: Optional[ContextVariables] = None,
         input_str: Optional[str] = None,
+        **kwargs: Dict[str, Any],
     ) -> SKContext:
         # if the user passed in a context, prioritize it, but merge with any other inputs
         if input_context is not None:
             context = input_context
             if input_vars is not None:
-                context._variables = input_vars.merge_or_overwrite(
-                    new_vars=context._variables, overwrite=False
+                context.variables = input_vars.merge_or_overwrite(
+                    new_vars=context.variables, overwrite=False
                 )
 
             if input_str is not None:
-                context._variables = ContextVariables(input_str).merge_or_overwrite(
-                    new_vars=context._variables, overwrite=False
+                context.variables = ContextVariables(input_str).merge_or_overwrite(
+                    new_vars=context.variables, overwrite=False
                 )
 
-        # if the user did not pass in a context, prioritize an input string, and merge that with input context variables
+        # if the user did not pass in a context, prioritize an input string,
+        # and merge that with input context variables
         else:
             if input_str is not None and input_vars is None:
                 variables = ContextVariables(input_str)
@@ -175,38 +291,92 @@ class Kernel:
 
         pipeline_step = 0
         for func in functions:
-            assert isinstance(func, SKFunctionBase), (
-                "All func arguments to Kernel.run*(inputs, func1, func2, ...) "
-                "must be SKFunctionBase instances"
-            )
-
-            if context.error_occurred:
-                self._log.error(
-                    f"Something went wrong in pipeline step {pipeline_step}. "
-                    f"Error description: '{context.last_error_description}'"
+            while True:
+                assert isinstance(func, SKFunctionBase), (
+                    "All func arguments to Kernel.run*(inputs, func1, func2, ...) "
+                    "must be SKFunctionBase instances"
                 )
-                return context
-
-            pipeline_step += 1
-
-            try:
-                context = await func.invoke_async(input=None, context=context)
 
                 if context.error_occurred:
                     self._log.error(
                         f"Something went wrong in pipeline step {pipeline_step}. "
-                        f"During function invocation: '{func.skill_name}.{func.name}'. "
                         f"Error description: '{context.last_error_description}'"
                     )
                     return context
-            except Exception as ex:
-                self._log.error(
-                    f"Something went wrong in pipeline step {pipeline_step}. "
-                    f"During function invocation: '{func.skill_name}.{func.name}'. "
-                    f"Error description: '{str(ex)}'"
-                )
-                context.fail(str(ex), ex)
-                return context
+
+                try:
+                    function_details = func.describe()
+
+                    function_invoking_args = self.on_function_invoking(
+                        function_details, context
+                    )
+                    if (
+                        isinstance(function_invoking_args, FunctionInvokingEventArgs)
+                        and function_invoking_args.is_cancel_requested
+                    ):
+                        cancel_message = "Execution was cancelled on function invoking event of pipeline step"
+                        self._log.info(
+                            f"{cancel_message} {pipeline_step}: {func.skill_name}.{func.name}."
+                        )
+                        return context
+
+                    if (
+                        isinstance(function_invoking_args, FunctionInvokingEventArgs)
+                        and function_invoking_args.is_skip_requested
+                    ):
+                        skip_message = "Execution was skipped on function invoking event of pipeline step"
+                        self._log.info(
+                            f"{skip_message} {pipeline_step}: {func.skill_name}.{func.name}."
+                        )
+                        break
+
+                    context = await func.invoke_async(
+                        input=None, context=context, **kwargs
+                    )
+
+                    if context.error_occurred:
+                        self._log.error(
+                            f"Something went wrong in pipeline step {pipeline_step}. "
+                            f"During function invocation: '{func.skill_name}.{func.name}'. "
+                            f"Error description: '{context.last_error_description}'"
+                        )
+                        return context
+
+                    function_invoked_args = self.on_function_invoked(
+                        function_details, context
+                    )
+
+                    if (
+                        isinstance(function_invoked_args, FunctionInvokedEventArgs)
+                        and function_invoked_args.is_cancel_requested
+                    ):
+                        cancel_message = "Execution was cancelled on function invoked event of pipeline step"
+                        self._log.info(
+                            f"{cancel_message} {pipeline_step}: {func.skill_name}.{func.name}."
+                        )
+                        return context
+                    if (
+                        isinstance(function_invoked_args, FunctionInvokedEventArgs)
+                        and function_invoked_args.is_repeat_requested
+                    ):
+                        repeat_message = "Execution was repeated on function invoked event of pipeline step"
+                        self._log.info(
+                            f"{repeat_message} {pipeline_step}: {func.skill_name}.{func.name}."
+                        )
+                        continue
+                    else:
+                        break
+
+                except Exception as ex:
+                    self._log.error(
+                        f"Something went wrong in pipeline step {pipeline_step}. "
+                        f"During function invocation: '{func.skill_name}.{func.name}'. "
+                        f"Error description: '{str(ex)}'"
+                    )
+                    context.fail(str(ex), ex)
+                    return context
+
+            pipeline_step += 1
 
         return context
 
@@ -245,13 +415,35 @@ class Kernel:
     def register_memory_store(self, memory_store: MemoryStoreBase) -> None:
         self.use_memory(memory_store)
 
-    def create_new_context(self) -> SKContext:
+    def create_new_context(
+        self, variables: Optional[ContextVariables] = None
+    ) -> SKContext:
         return SKContext(
-            ContextVariables(),
+            ContextVariables() if not variables else variables,
             self._memory,
             self.skills,
             self._log,
         )
+
+    def on_function_invoking(
+        self, function_view: FunctionView, context: SKContext
+    ) -> FunctionInvokingEventArgs:
+        if self._function_invoking_handlers:
+            args = FunctionInvokingEventArgs(function_view, context)
+            for handler in self._function_invoking_handlers.values():
+                handler(self, args)
+            return args
+        return None
+
+    def on_function_invoked(
+        self, function_view: FunctionView, context: SKContext
+    ) -> FunctionInvokedEventArgs:
+        if self._function_invoked_handlers:
+            args = FunctionInvokedEventArgs(function_view, context)
+            for handler in self._function_invoked_handlers.values():
+                handler(self, args)
+            return args
+        return None
 
     def import_skill(
         self, skill_instance: Any, skill_name: str = ""
@@ -263,8 +455,13 @@ class Kernel:
             self._log.debug(f"Importing skill {skill_name}")
 
         functions = []
+
+        if isinstance(skill_instance, dict):
+            candidates = skill_instance.items()
+        else:
+            candidates = inspect.getmembers(skill_instance, inspect.ismethod)
         # Read every method from the skill instance
-        for _, candidate in inspect.getmembers(skill_instance, inspect.ismethod):
+        for _, candidate in candidates:
             # If the method is a semantic function, register it
             if not hasattr(candidate, "__sk_function__"):
                 continue
@@ -280,8 +477,10 @@ class Kernel:
         if len(function_names) != len(set(function_names)):
             raise KernelException(
                 KernelException.ErrorCodes.FunctionOverloadNotSupported,
-                "Overloaded functions are not supported, "
-                "please differentiate function names.",
+                (
+                    "Overloaded functions are not supported, "
+                    "please differentiate function names."
+                ),
             )
 
         skill = {}
@@ -563,9 +762,11 @@ class Kernel:
             if service is None:
                 raise AIException(
                     AIException.ErrorCodes.InvalidConfiguration,
-                    "Could not load chat service, unable to prepare semantic function. "
-                    "Function description: "
-                    "{function_config.prompt_template_config.description}",
+                    (
+                        "Could not load chat service, unable to prepare semantic"
+                        " function. Function description:"
+                        " {function_config.prompt_template_config.description}"
+                    ),
                 )
 
             function.set_chat_service(lambda: service(self))
@@ -586,9 +787,11 @@ class Kernel:
             if service is None:
                 raise AIException(
                     AIException.ErrorCodes.InvalidConfiguration,
-                    "Could not load text service, unable to prepare semantic function. "
-                    "Function description: "
-                    "{function_config.prompt_template_config.description}",
+                    (
+                        "Could not load text service, unable to prepare semantic"
+                        " function. Function description:"
+                        " {function_config.prompt_template_config.description}"
+                    ),
                 )
 
             function.set_ai_service(lambda: service(self))
@@ -613,26 +816,22 @@ class Kernel:
             )
 
         skill_name = os.path.basename(skill_directory)
-        try:
-            spec = importlib.util.spec_from_file_location(
-                MODULE_NAME, native_py_file_path
-            )
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
 
-            class_name = next(
-                (
-                    name
-                    for name, cls in inspect.getmembers(module, inspect.isclass)
-                    if cls.__module__ == MODULE_NAME
-                ),
-                None,
-            )
-            if class_name:
-                skill_obj = getattr(module, class_name)()
-                return self.import_skill(skill_obj, skill_name)
-        except Exception:
-            pass
+        spec = importlib.util.spec_from_file_location(MODULE_NAME, native_py_file_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        class_name = next(
+            (
+                name
+                for name, cls in inspect.getmembers(module, inspect.isclass)
+                if cls.__module__ == MODULE_NAME
+            ),
+            None,
+        )
+        if class_name:
+            skill_obj = getattr(module, class_name)()
+            return self.import_skill(skill_obj, skill_name)
 
         return {}
 
@@ -730,3 +929,17 @@ class Kernel:
         return self.register_semantic_function(
             skill_name, function_name, function_config
         )
+
+    def add_function_invoking_handler(self, handler: Callable) -> None:
+        self._function_invoking_handlers[id(handler)] = handler
+
+    def add_function_invoked_handler(self, handler: Callable) -> None:
+        self._function_invoked_handlers[id(handler)] = handler
+
+    def remove_function_invoking_handler(self, handler: Callable) -> None:
+        if id(handler) in self._function_invoking_handlers:
+            del self._function_invoking_handlers[id(handler)]
+
+    def remove_function_invoked_handler(self, handler: Callable) -> None:
+        if id(handler) in self._function_invoked_handlers:
+            del self._function_invoked_handlers[id(handler)]

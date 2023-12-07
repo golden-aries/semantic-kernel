@@ -1,13 +1,17 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Microsoft.SemanticKernel.Text;
 
 namespace Microsoft.SemanticKernel.Connectors.AI.OpenAI.TextEmbedding;
 
 /// <summary>
 /// A response from an embedding request
 /// </summary>
+[Experimental("SKEXP0011")]
 public sealed class TextEmbeddingResponse
 {
     /// <summary>
@@ -19,7 +23,8 @@ public sealed class TextEmbeddingResponse
         /// The embedding vector
         /// </summary>
         [JsonPropertyName("embedding")]
-        public IList<float> Values { get; set; } = new List<float>();
+        [JsonConverter(typeof(ReadOnlyMemoryConverter))]
+        public ReadOnlyMemory<float> Values { get; set; }
 
         /// <summary>
         /// Index of the embedding vector
