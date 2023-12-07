@@ -1,66 +1,70 @@
-﻿//// Copyright (c) Microsoft. All rights reserved.
-
-//using DemoCommon.Options;
-using Microsoft.Extensions.Configuration;
-//using Microsoft.SemanticKernel;
-//using Microsoft.SemanticKernel.SemanticFunctions;
-
-var cb = new ConfigurationBuilder();
-//cb.AddJsonFile("appsettings.json");
-//cb.AddUserSecrets<AIServiceOptions>(); // re-using the same secret id as CopilotChatWebApi
-//var config = cb.Build();
-//var options = new AIServiceOptions();
-//config.Bind(AIServiceOptions.PropertyName, options);
-//options.Validate();
-
-//var builder = Kernel.Builder.WithAzureChatCompletionService(
-//        options.Models.Completion,
-//        options.Endpoint,
-//        options.Key);
-
-//IKernel kernel = builder.Build();
-
-//string mySemanticFunctionInline = """
-//{{$input}}
-
-//Summarize the content above in less than 140 characters.
-//""";
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel;
+using Demo01SemanticFunctions;
+using DemoCommon;
+using Json.More;
 
 
+var hab = Host.CreateApplicationBuilder(args);
+hab.Configuration.AddJsonFile("appsettings.json")
+    .AddUserSecrets<TxAiChatCompletionSettings>();
 
-//var promptConfig = new PromptTemplateConfig
+var host = hab.Build();
+var conf = host.Services.GetRequiredService<IConfiguration>();
+
+//var hb = new HostBuilder();
+//hb.ConfigureAppConfiguration(cb =>
 //{
-//    Completion =
-//    {
-//        MaxTokens = 1000, Temperature = 0.2, TopP = 0.5,
-//    }
-//};
+//    cb.AddJsonFile("appsettings.json");
+//    cb.AddUserSecrets<TxAiChatCompletionSettings>();
+//});
+//var host = hb.Build();
+//var conf = host.Services.GetRequiredService<IConfiguration>();
 
-//var promptTemplate = new PromptTemplate(
-//    mySemanticFunctionInline, promptConfig, kernel
-//);
+//var cb = new ConfigurationBuilder();
+//cb.AddJsonFile("appsettings.json");
+//cb.AddUserSecrets<TxAiChatCompletionSettings>();
+//var conf = cb.Build();
 
-//var functionConfig = new SemanticFunctionConfig(promptConfig, promptTemplate);
+var opts = conf.GetSection(nameof(TxAiChatCompletionSettings)).Get<TxAiChatCompletionSettings>();
+var builder = new KernelBuilder();
+builder.Services.AddLogging(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
 
-//var summaryFunction = kernel.RegisterSemanticFunction("MySkill", "Summary", functionConfig);
 
-//Console.WriteLine("A semantic function has been registered.");
+Kernel kernel = builder
+        .AddAzureOpenAIChatCompletion(
+                deploymentName: opts.ModelId,
+                modelId: opts.ModelId,
+                endpoint: opts.Endpoint,
+                apiKey: opts.ApiKey)
+        .Build();
+//Console.WriteLine("Waiting for 1 day!");
+//await Task.Delay(TimeSpan.FromDays(1));
 
-//var input = """
-//I think with some confidence I can say that 2023 is going to be the most exciting year that 
-//the AI community has ever had,” writes Kevin Scott, chief technology officer at Microsoft, 
-//in a Q&A on the company’s AI blog. He acknowledges that he also thought 2022 was the most 
-//exciting year for AI, but he believes that the pace of innovation is only increasing. 
-//This is particularly true with generative AI, which doesn’t simply analyze large data sets 
-//but is a tool people can use to create entirely new works. We can already see its promise 
-//in systems like GPT-3, which can do anything from helping copyedit and summarize text to 
-//providing inspiration, and DALL-E 2, which can create useful and arresting works of art 
-//based on text inputs. Here are some of Scott’s predictions about how AI will change the 
-//way we work and play.
-//""";
-//// Text source: https://www.microsoft.com/en-us/worklab/kevin-scott-on-5-ways-generative-ai-will-transform-work-in-2023
+var appLifeTime = host.Services.GetRequiredService<IHostApplicationLifetime>(); // kernel.Services.GetRequiredService<IApplicationLifetime>();
+//var folder = RepoFiles.SamplePluginsPath();
+//var plugin = kernel.ImportPluginFromPromptDirectory(folder, "MiscPlugin");
 
-//var summary = await kernel.RunAsync(input, summaryFunction);
+var folder = "C:\\src\\try\\sk\\Plugins\\MiscPlugin";
+var plugin = kernel.ImportPluginFromPromptDirectory(folder);
 
-//Console.WriteLine(summary);
-//Console.WriteLine("Done!");
+if (!plugin.TryGetFunction("DiscoverIntent", out var func))
+{
+    Console.WriteLine("Function nof found!");
+    return;
+};
+var a = new KernelArguments("Do you know any Joke!");
+try
+{
+    FunctionResult result = await kernel.InvokeAsync(func, a, appLifeTime.ApplicationStopping);
+    var v = result.GetValue<string>();
+    Console.Write(result.ToString());
+}
+catch (Exception ex)
+{
+    Console.WriteLine(ex.Message);
+}
+Console.WriteLine("Done!");
