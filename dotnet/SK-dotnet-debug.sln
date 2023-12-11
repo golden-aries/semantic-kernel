@@ -160,8 +160,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TxTests", "src\TxTests\TxTe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SemanticKernel.Core", "src\SemanticKernel.Core\SemanticKernel.Core.csproj", "{13423A6A-DFAF-4C62-A793-B5E922919345}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KernelSyntaxExamples", "samples\KernelSyntaxExamples\KernelSyntaxExamples.csproj", "{BA3E2D76-A089-4296-8FCF-D2F88A6A529D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -419,12 +417,6 @@ Global
 		{13423A6A-DFAF-4C62-A793-B5E922919345}.Publish|Any CPU.Build.0 = Publish|Any CPU
 		{13423A6A-DFAF-4C62-A793-B5E922919345}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13423A6A-DFAF-4C62-A793-B5E922919345}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BA3E2D76-A089-4296-8FCF-D2F88A6A529D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BA3E2D76-A089-4296-8FCF-D2F88A6A529D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BA3E2D76-A089-4296-8FCF-D2F88A6A529D}.Publish|Any CPU.ActiveCfg = Debug|Any CPU
-		{BA3E2D76-A089-4296-8FCF-D2F88A6A529D}.Publish|Any CPU.Build.0 = Debug|Any CPU
-		{BA3E2D76-A089-4296-8FCF-D2F88A6A529D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BA3E2D76-A089-4296-8FCF-D2F88A6A529D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -482,7 +474,6 @@ Global
 		{F34280B8-140F-4574-85D5-BE16AC086F7C} = {FA3720F1-C99A-49B2-9577-A940257098BF}
 		{8F725BA4-6699-47CA-98FE-B3A46B7DE271} = {FA3720F1-C99A-49B2-9577-A940257098BF}
 		{13423A6A-DFAF-4C62-A793-B5E922919345} = {831DDCA2-7D2C-4C31-80DB-6BDB3E1F7AE0}
-		{BA3E2D76-A089-4296-8FCF-D2F88A6A529D} = {FA3720F1-C99A-49B2-9577-A940257098BF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FBDC56A3-86AD-4323-AA0F-201E59123B83}

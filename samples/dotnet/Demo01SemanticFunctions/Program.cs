@@ -14,6 +14,7 @@ hab.Configuration.AddJsonFile("appsettings.json")
 
 var host = hab.Build();
 var conf = host.Services.GetRequiredService<IConfiguration>();
+;
 
 //var hb = new HostBuilder();
 //hb.ConfigureAppConfiguration(cb =>
