@@ -14,36 +14,22 @@ hab.Configuration.AddJsonFile("appsettings.json")
 
 var host = hab.Build();
 var conf = host.Services.GetRequiredService<IConfiguration>();
-;
 
-//var hb = new HostBuilder();
-//hb.ConfigureAppConfiguration(cb =>
-//{
-//    cb.AddJsonFile("appsettings.json");
-//    cb.AddUserSecrets<TxAiChatCompletionSettings>();
-//});
-//var host = hb.Build();
-//var conf = host.Services.GetRequiredService<IConfiguration>();
+var opts = conf.GetSection(nameof(TxAiChatCompletionSettings))
+    .Get<TxAiChatCompletionSettings>()
+    ?? throw new ArgumentNullException(nameof(TxAiChatCompletionSettings));
 
-//var cb = new ConfigurationBuilder();
-//cb.AddJsonFile("appsettings.json");
-//cb.AddUserSecrets<TxAiChatCompletionSettings>();
-//var conf = cb.Build();
-
-var opts = conf.GetSection(nameof(TxAiChatCompletionSettings)).Get<TxAiChatCompletionSettings>();
 var builder = new KernelBuilder();
 builder.Services.AddLogging(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
 
 
 Kernel kernel = builder
         .AddAzureOpenAIChatCompletion(
-                deploymentName: opts.ModelId,
+                deploymentName: opts.DeploymentName,
                 modelId: opts.ModelId,
                 endpoint: opts.Endpoint,
                 apiKey: opts.ApiKey)
         .Build();
-//Console.WriteLine("Waiting for 1 day!");
-//await Task.Delay(TimeSpan.FromDays(1));
 
 var appLifeTime = host.Services.GetRequiredService<IHostApplicationLifetime>(); // kernel.Services.GetRequiredService<IApplicationLifetime>();
 string folder = RepoFiles.SamplePluginsPath();
@@ -57,6 +43,7 @@ if (!plugin.TryGetFunction("AssistantIntent", out var func))
     return;
 };
 var a = new KernelArguments("Do you know any Joke!");
+#pragma warning disable CA1031 // Do not catch general exception types
 try
 {
     FunctionResult result = await kernel.InvokeAsync(func, a, appLifeTime.ApplicationStopping);
@@ -67,4 +54,5 @@ catch (Exception ex)
 {
     Console.WriteLine(ex.Message);
 }
+#pragma warning restore CA1031 // Do not catch general exception types
 Console.WriteLine("Done!");

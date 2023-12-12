@@ -30,8 +30,15 @@ public static class Example66_FunctionCallingStepwisePlanner
 
         foreach (var question in questions)
         {
-            FunctionCallingStepwisePlannerResult result = await planner.ExecuteAsync(kernel, question);
-            Console.WriteLine($"Q: {question}\nA: {result.FinalAnswer}");
+            try
+            {
+                FunctionCallingStepwisePlannerResult result = await planner.ExecuteAsync(kernel, question);
+                Console.WriteLine($"Q: {question}\nA: {result.FinalAnswer}");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
 
             // You can uncomment the line below to see the planner's process for completing the request.
             // Console.WriteLine($"Chat history:\n{result.ChatHistory?.AsJson()}");

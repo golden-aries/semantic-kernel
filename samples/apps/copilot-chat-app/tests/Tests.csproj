@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\copilot-chat-external-skills\CopilotChatExternalSkills.csproj" />
     <ProjectReference Include="..\webapi\CopilotChatWebApi.csproj" />
   </ItemGroup>
 

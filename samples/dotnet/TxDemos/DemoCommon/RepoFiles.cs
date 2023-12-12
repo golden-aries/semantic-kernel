@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using DemoCommon;
-using System.IO;
 using System.Reflection;
 
 namespace DemoCommon;
@@ -34,7 +32,7 @@ public static class RepoFiles
         if (!SearchPath(Parent + Path.DirectorySeparatorChar + Folder, out string path)
             && !SearchPath(Folder, out path))
         {
-            throw new Exception("Plugins directory not found. The app needs the plugins from the repo to work.");
+            throw new InvalidOperationException("Plugins directory not found. The app needs the plugins from the repo to work.");
         }
 
         return path;
