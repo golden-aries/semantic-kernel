@@ -50,7 +50,7 @@ public class TxHttpHandler : DelegatingHandler
                 fromPreviousRequest = s_stopWatch.Elapsed;
             }
             Debug.WriteLine($"{s_prefix} | {s_seq} Request  | Tokens {tokenQty} | ReqId {reqId} | {request.RequestUri}\n");
-            Debug.WriteLine($"{DateTime.Now} | Delay From previous: {fromPreviousRequest} \n" + reqStr);
+            Debug.WriteLine($"{DateTime.Now} | Delay From previous: {fromPreviousRequest} \n" + JsonConvert.SerializeObject(holder, Formatting.Indented));
 
             var resp = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
             lock (s_stopWatch)
