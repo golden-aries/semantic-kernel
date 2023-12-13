@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Demo10_FcStetwisePlanner": {
+      "commandName": "Project",
+      "commandLineArgs": "--environment=Development"
+    }
+  }
+}

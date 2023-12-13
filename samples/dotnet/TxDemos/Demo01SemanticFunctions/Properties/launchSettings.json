@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Demo01SemanticFunctions": {
+      "commandName": "Project",
+      "commandLineArgs": "--environment=Development"
+    }
+  }
+}
