@@ -20,7 +20,7 @@ hab.Services.Configure<TxAiChatCompletionSettings>(hab.Configuration.GetSection(
 
 hab.Services.AddTransient<TxHttpHandler>();
 hab.Services.AddHttpClient();
-hab.Services.AddHttpClient(nameof(TxAiChatCompletionSettings))
+hab.Services.AddHttpClient(SepcialHttpClientName)
     .AddHttpMessageHandler<TxHttpHandler>();
 
 hab.Services.AddScoped<Kernel>(sp =>

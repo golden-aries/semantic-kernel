@@ -6,11 +6,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
+using TxExperiment.Http;
 
+string SepcialHttpClientName = nameof(TxAiChatCompletionSettings);
 
 var hab = Host.CreateApplicationBuilder(args);
 hab.Configuration.AddJsonFile("appsettings.json")
     .AddUserSecrets<TxAiChatCompletionSettings>();
+
+hab.Services.AddTransient<TxHttpHandler>();
+hab.Services.AddHttpClient();
+hab.Services.AddHttpClient(SepcialHttpClientName)
+    .AddHttpMessageHandler<TxHttpHandler>();
 
 var host = hab.Build();
 var conf = host.Services.GetRequiredService<IConfiguration>();
@@ -18,6 +25,8 @@ var conf = host.Services.GetRequiredService<IConfiguration>();
 var opts = conf.GetSection(nameof(TxAiChatCompletionSettings))
     .Get<TxAiChatCompletionSettings>()
     ?? throw new ArgumentNullException(nameof(TxAiChatCompletionSettings));
+
+var factory = host.Services.GetRequiredService<IHttpClientFactory>();
 
 var builder = new KernelBuilder();
 builder.Services.AddLogging(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
@@ -28,7 +37,8 @@ Kernel kernel = builder
                 deploymentName: opts.DeploymentName,
                 modelId: opts.ModelId,
                 endpoint: opts.Endpoint,
-                apiKey: opts.ApiKey)
+                apiKey: opts.ApiKey,
+                 httpClient: factory.CreateClient(SepcialHttpClientName))
         .Build();
 
 var appLifeTime = host.Services.GetRequiredService<IHostApplicationLifetime>(); // kernel.Services.GetRequiredService<IApplicationLifetime>();
