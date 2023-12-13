@@ -48,7 +48,7 @@ hab.Services.AddScoped<Kernel>(sp =>
 
 var host = hab.Build();
 using var scope = host.Services.CreateScope();
-var env = scope.ServiceProvider.GetRequiredService<IHostingEnvironment>();
+var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
 Console.WriteLine($"{env.ApplicationName} running in {env.EnvironmentName} environment!");
 var appLifeTime = scope.ServiceProvider.GetRequiredService<IHostApplicationLifetime>();
 var kernel = scope.ServiceProvider.GetRequiredService<Kernel>();

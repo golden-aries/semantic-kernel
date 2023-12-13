@@ -20,6 +20,9 @@ hab.Services.AddHttpClient(SepcialHttpClientName)
     .AddHttpMessageHandler<TxHttpHandler>();
 
 var host = hab.Build();
+var env = host.Services.GetRequiredService<IHostEnvironment>();
+Console.WriteLine($"{env.ApplicationName} running in {env.EnvironmentName} environment!");
+
 var conf = host.Services.GetRequiredService<IConfiguration>();
 
 var opts = conf.GetSection(nameof(TxAiChatCompletionSettings))
