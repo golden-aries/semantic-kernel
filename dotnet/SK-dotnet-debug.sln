@@ -160,6 +160,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo01SemanticFunctions", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo10_FcStepwisePlanner", "..\samples\dotnet\TxDemos\Demo10_FcStepwisePlanner\Demo10_FcStepwisePlanner.csproj", "{9D366FDF-0146-4A8D-A784-4C6ED3B16EAF}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo11_FsStepwisePlannerSeq", "..\samples\dotnet\TxDemos\Demo11_FsStepwisePlannerSeq\Demo11_FsStepwisePlannerSeq.csproj", "{AB9A1441-5109-448B-AC0F-2907D71475DB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -401,6 +403,12 @@ Global
 		{9D366FDF-0146-4A8D-A784-4C6ED3B16EAF}.Publish|Any CPU.Build.0 = Debug|Any CPU
 		{9D366FDF-0146-4A8D-A784-4C6ED3B16EAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9D366FDF-0146-4A8D-A784-4C6ED3B16EAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB9A1441-5109-448B-AC0F-2907D71475DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB9A1441-5109-448B-AC0F-2907D71475DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB9A1441-5109-448B-AC0F-2907D71475DB}.Publish|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB9A1441-5109-448B-AC0F-2907D71475DB}.Publish|Any CPU.Build.0 = Debug|Any CPU
+		{AB9A1441-5109-448B-AC0F-2907D71475DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB9A1441-5109-448B-AC0F-2907D71475DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -458,6 +466,7 @@ Global
 		{882089BB-4F38-4D2B-BCDA-6A545B6B62FA} = {F027168C-B4FF-45B8-8C29-A599763EA245}
 		{3459418B-8590-472E-B14F-BA37F263CCD6} = {F027168C-B4FF-45B8-8C29-A599763EA245}
 		{9D366FDF-0146-4A8D-A784-4C6ED3B16EAF} = {F027168C-B4FF-45B8-8C29-A599763EA245}
+		{AB9A1441-5109-448B-AC0F-2907D71475DB} = {F027168C-B4FF-45B8-8C29-A599763EA245}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FBDC56A3-86AD-4323-AA0F-201E59123B83}
