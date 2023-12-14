@@ -33,7 +33,7 @@ public class TokenCounter
     /// <summary>
     /// Rough token costing of ChatCompletionContextMessages object.
     /// </summary>
-    public static int GetContextMessagesTokenCount(IEnumerable<TxChatMessage> messages)
+    public static int GetContextMessagesTokenCount(IEnumerable<LlmChatMessage> messages)
     {
         var tokenCount = 0;
         foreach (var message in messages)

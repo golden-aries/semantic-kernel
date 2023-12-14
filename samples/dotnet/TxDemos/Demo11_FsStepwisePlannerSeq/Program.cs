@@ -54,8 +54,8 @@ hab.Services.AddScoped<Kernel>(sp =>
 var host = hab.Build();
 using var scope = host.Services.CreateScope();
 var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
-var logger = scope.ServiceProvider.GetRequiredService<ILogger<TxHttpHandler>>();
-logger.LogInformation("Test logging");
+//var logger = scope.ServiceProvider.GetRequiredService<ILogger<TxHttpHandler>>();
+//logger.LogInformation("Test logging");
 
 Console.WriteLine($"{env.ApplicationName} running in {env.EnvironmentName} environment!");
 var appLifeTime = scope.ServiceProvider.GetRequiredService<IHostApplicationLifetime>();
@@ -64,8 +64,8 @@ var kernel = scope.ServiceProvider.GetRequiredService<Kernel>();
 string[] questions = new string[]
        {
             "What is the current hour number, plus 5?",
-            "What is 387 minus 22? Email the solution to John and Mary.",
-            "Write a limerick, translate it to Spanish, and send it to Jane",
+            //"What is 387 minus 22? Email the solution to John and Mary.",
+            //"Write a limerick, translate it to Spanish, and send it to Jane",
        };
 
 #pragma warning disable SKEXP0061 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.

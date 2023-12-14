@@ -1,22 +1,19 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 namespace TxExperiment.Http;
-/// <summary>
-/// Holds Messages
-/// </summary>
-public class MessagesHolder
-{
-    /// <summary>
-    /// Messages
-    /// </summary>
-    public List<TxChatMessage>? Messages { get; set; }
-}
 
 /// <summary>
 /// Tx implementation of chat message
 /// </summary>
-public class TxChatMessage
+public class LlmChatMessage
 {
+    /// <summary>
+    /// Role
+    /// </summary>
     public string? Role { get; set; }
+
+    /// <summary>
+    /// Content
+    /// </summary>
     public string? Content { get; set; }
 }
