@@ -31,7 +31,7 @@ var opts = conf.GetSection(nameof(TxAiChatCompletionSettings))
 
 var factory = host.Services.GetRequiredService<IHttpClientFactory>();
 
-var builder = new KernelBuilder();
+var builder = Kernel.CreateBuilder();
 builder.Services.AddLogging(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
 
 
@@ -55,7 +55,7 @@ if (!plugin.TryGetFunction("AssistantIntent", out var func))
     Console.WriteLine("Function nof found!");
     return;
 };
-var a = new KernelArguments("Do you know any Joke!");
+var a = new KernelArguments { ["input"] = "Do you know any Joke!" };
 #pragma warning disable CA1031 // Do not catch general exception types
 try
 {

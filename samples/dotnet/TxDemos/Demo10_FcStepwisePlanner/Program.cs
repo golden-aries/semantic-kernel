@@ -26,7 +26,7 @@ hab.Services.AddHttpClient(SepcialHttpClientName)
 hab.Services.AddScoped<Kernel>(sp =>
 {
     var opts = sp.GetRequiredService<IOptionsSnapshot<TxAiChatCompletionSettings>>().Value;
-    var builder = new KernelBuilder();
+    var builder = Kernel.CreateBuilder();
 
     var factory = sp.GetRequiredService<IHttpClientFactory>();
 

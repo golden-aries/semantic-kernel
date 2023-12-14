@@ -1,8 +1,12 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using Microsoft.SemanticKernel.AI.ChatCompletion;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace TxExperiment.Http;
+
+/// <summary>
+/// TokenCounter
+/// </summary>
 public class TokenCounter
 {
     /// <summary>
