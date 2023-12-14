@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Planning;
 using TxExperiment.Http;
+using TxExperiment.Skills;
 
 string SepcialHttpClientName = nameof(TxAiChatCompletionSettings);
 
@@ -44,6 +45,7 @@ hab.Services.AddScoped<Kernel>(sp =>
                 httpClient: factory.CreateClient(SepcialHttpClientName))
         .Build();
 
+    //kernel.ImportPluginFromType<HelpDeskSkill>();
     kernel.ImportPluginFromType<EmailPlugin>();
     kernel.ImportPluginFromType<MathPlugin>();
     kernel.ImportPluginFromType<TimePlugin>();
@@ -63,7 +65,7 @@ var kernel = scope.ServiceProvider.GetRequiredService<Kernel>();
 
 string[] questions = new string[]
        {
-            "What is the current hour number, plus 5?",
+            "I need quote",
             //"What is 387 minus 22? Email the solution to John and Mary.",
             //"Write a limerick, translate it to Spanish, and send it to Jane",
        };
