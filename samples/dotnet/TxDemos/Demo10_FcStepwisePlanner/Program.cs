@@ -20,8 +20,8 @@ hab.Services.Configure<TxAiChatCompletionSettings>(hab.Configuration.GetSection(
 
 hab.Services.AddTransient<TxHttpHandler>();
 hab.Services.AddHttpClient();
-hab.Services.AddHttpClient(SepcialHttpClientName)
-    .AddHttpMessageHandler<TxHttpHandler>();
+hab.Services.AddHttpClient(SepcialHttpClientName);
+    //.AddHttpMessageHandler<TxHttpHandler>();
 
 hab.Services.AddScoped<Kernel>(sp =>
 {
@@ -56,8 +56,8 @@ var kernel = scope.ServiceProvider.GetRequiredService<Kernel>();
 string[] questions = new string[]
        {
             "What is the current hour number, plus 5?",
-            "What is 387 minus 22? Email the solution to John and Mary.",
-            "Write a limerick, translate it to Spanish, and send it to Jane",
+            //"What is 387 minus 22? Email the solution to John and Mary.",
+            //"Write a limerick, translate it to Spanish, and send it to Jane",
        };
 
 #pragma warning disable SKEXP0061 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
