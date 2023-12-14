@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using Microsoft.SemanticKernel.Plugins.OpenApi.Builders.Serialization;
-using Microsoft.SemanticKernel.Plugins.OpenApi.Model;
+using System.Text.Json.Nodes;
+using Microsoft.SemanticKernel.Plugins.OpenApi;
 using Xunit;
 
 namespace SemanticKernel.Functions.UnitTests.OpenApi.Builders.Serialization;
@@ -23,7 +23,7 @@ public class FormStyleParametersSerializerTests
                 arrayItemType: "integer");
 
         // Act
-        var result = FormStyleParameterSerializer.Serialize(parameter, "[1,2,3]");
+        var result = FormStyleParameterSerializer.Serialize(parameter, new JsonArray(1, 2, 3));
 
         // Assert
         Assert.NotNull(result);
@@ -45,7 +45,7 @@ public class FormStyleParametersSerializerTests
                 arrayItemType: "integer");
 
         // Act
-        var result = FormStyleParameterSerializer.Serialize(parameter, "[1,2,3]");
+        var result = FormStyleParameterSerializer.Serialize(parameter, new JsonArray(1, 2, 3));
 
         // Assert
         Assert.NotNull(result);
@@ -72,6 +72,27 @@ public class FormStyleParametersSerializerTests
         Assert.NotNull(result);
 
         Assert.Equal("id=28", result);
+    }
+
+    [Fact]
+    public void ItShouldCreateParameterForStringValue()
+    {
+        // Arrange
+        var parameter = new RestApiOperationParameter(
+                name: "id",
+                type: "string",
+                isRequired: true,
+                expand: false,
+                location: RestApiOperationParameterLocation.Query,
+                style: RestApiOperationParameterStyle.Form);
+
+        // Act
+        var result = FormStyleParameterSerializer.Serialize(parameter, JsonValue.Create(new DateTime(2023, 12, 06, 11, 53, 36, DateTimeKind.Utc)));
+
+        // Assert
+        Assert.NotNull(result);
+
+        Assert.Equal("id=2023-12-06T11%3a53%3a36Z", result);
     }
 
     [Theory]
@@ -104,7 +125,7 @@ public class FormStyleParametersSerializerTests
         var parameter = new RestApiOperationParameter("id", "array", false, true, RestApiOperationParameterLocation.Query, RestApiOperationParameterStyle.Form);
 
         // Act
-        var result = FormStyleParameterSerializer.Serialize(parameter, $"[\"{specialSymbol}\"]");
+        var result = FormStyleParameterSerializer.Serialize(parameter, new JsonArray($"{specialSymbol}"));
 
         // Assert
         Assert.NotNull(result);
@@ -123,7 +144,7 @@ public class FormStyleParametersSerializerTests
         var parameter = new RestApiOperationParameter("id", "array", false, false, RestApiOperationParameterLocation.Query, RestApiOperationParameterStyle.Form);
 
         // Act
-        var result = FormStyleParameterSerializer.Serialize(parameter, $"[\"{specialSymbol}\"]");
+        var result = FormStyleParameterSerializer.Serialize(parameter, new JsonArray($"{specialSymbol}"));
 
         // Assert
         Assert.NotNull(result);

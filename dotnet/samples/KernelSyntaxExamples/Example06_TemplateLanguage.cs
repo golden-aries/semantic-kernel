@@ -3,10 +3,9 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.AI.OpenAI;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Plugins.Core;
 
-// ReSharper disable once InconsistentNaming
 public static class Example06_TemplateLanguage
 {
     /// <summary>
@@ -26,7 +25,7 @@ public static class Example06_TemplateLanguage
             return;
         }
 
-        Kernel kernel = new KernelBuilder()
+        Kernel kernel = Kernel.CreateBuilder()
             .AddOpenAIChatCompletion(
                 modelId: openAIModelId,
                 apiKey: openAIApiKey)

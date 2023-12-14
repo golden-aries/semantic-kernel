@@ -4,12 +4,11 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.AI.OpenAI;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Plugins.Core;
 using Plugins;
 using RepoUtils;
 
-// ReSharper disable once InconsistentNaming
 public static class Example10_DescribeAllPluginsAndFunctions
 {
     /// <summary>
@@ -21,7 +20,7 @@ public static class Example10_DescribeAllPluginsAndFunctions
     {
         Console.WriteLine("======== Describe all plugins and functions ========");
 
-        var kernel = new KernelBuilder()
+        var kernel = Kernel.CreateBuilder()
             .AddOpenAIChatCompletion(
                 modelId: TestConfiguration.OpenAI.ChatModelId,
                 apiKey: TestConfiguration.OpenAI.ApiKey)
@@ -80,7 +79,6 @@ public static class Example10_DescribeAllPluginsAndFunctions
     }
 }
 
-#pragma warning disable CS1587 // XML comment is not placed on a valid language element
 /** Sample output:
 
 *****************************************
@@ -178,4 +176,3 @@ Plugin: SummarizePlugin
         default: ''
 
 */
-#pragma warning restore CS1587 // XML comment is not placed on a valid language element

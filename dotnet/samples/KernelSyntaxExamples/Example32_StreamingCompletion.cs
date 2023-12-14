@@ -2,9 +2,8 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.SemanticKernel.AI.TextGeneration;
-using Microsoft.SemanticKernel.Connectors.AI.OpenAI;
-using Microsoft.SemanticKernel.Connectors.AI.OpenAI.TextGeneration;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.TextGeneration;
 
 /**
  * The following example shows how to use Semantic Kernel with streaming text completion.
@@ -16,7 +15,6 @@ using Microsoft.SemanticKernel.Connectors.AI.OpenAI.TextGeneration;
  *
  * Refer to example 33 for streaming chat completion.
  */
-// ReSharper disable once InconsistentNaming
 public static class Example32_StreamingCompletion
 {
     public static async Task RunAsync()
@@ -30,10 +28,10 @@ public static class Example32_StreamingCompletion
         Console.WriteLine("======== Azure OpenAI - Text Completion - Raw Streaming ========");
 
         var textGeneration = new AzureOpenAITextGenerationService(
-            TestConfiguration.AzureOpenAI.DeploymentName,
-            TestConfiguration.AzureOpenAI.ModelId,
-            TestConfiguration.AzureOpenAI.Endpoint,
-            TestConfiguration.AzureOpenAI.ApiKey);
+            deploymentName: TestConfiguration.AzureOpenAI.DeploymentName,
+            endpoint: TestConfiguration.AzureOpenAI.Endpoint,
+            apiKey: TestConfiguration.AzureOpenAI.ApiKey,
+            modelId: TestConfiguration.AzureOpenAI.ModelId);
 
         await TextGenerationStreamAsync(textGeneration);
     }
