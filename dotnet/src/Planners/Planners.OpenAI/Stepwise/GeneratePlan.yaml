@@ -13,6 +13,7 @@ template: |
   0. Each step should be something that is capable of being done by the list of available functions.
   1. Steps can use output from one or more previous steps as input, if appropriate.
   2. The plan should be as short as possible.
+  3. If more information is needed to make a plan use UserInteraction_SendMessage function to communicate this back to the user.
   </message>
   <message role=""user"">{{$goal}}</message>
 description:     Generate a step-by-step plan to satisfy a given goal

@@ -45,10 +45,10 @@ hab.Services.AddScoped<Kernel>(sp =>
                 httpClient: factory.CreateClient(SepcialHttpClientName))
         .Build();
 
-    //kernel.ImportPluginFromType<HelpDeskSkill>();
-    kernel.ImportPluginFromType<EmailPlugin>();
-    kernel.ImportPluginFromType<MathPlugin>();
-    kernel.ImportPluginFromType<TimePlugin>();
+    kernel.ImportPluginFromType<HelpDeskSkill>();
+    //kernel.ImportPluginFromType<EmailPlugin>();
+    //kernel.ImportPluginFromType<MathPlugin>();
+    //kernel.ImportPluginFromType<TimePlugin>();
 
     return kernel;
 });
@@ -65,7 +65,8 @@ var kernel = scope.ServiceProvider.GetRequiredService<Kernel>();
 
 string[] questions = new string[]
        {
-            "I need quote",
+            "I need quote"
+            //"What is the current hour number, plus 5?",
             //"What is 387 minus 22? Email the solution to John and Mary.",
             //"Write a limerick, translate it to Spanish, and send it to Jane",
        };

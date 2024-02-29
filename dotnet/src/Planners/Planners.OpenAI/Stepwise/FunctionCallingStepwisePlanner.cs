@@ -216,11 +216,15 @@ public sealed class FunctionCallingStepwisePlanner
         finalAnswer = string.Empty;
         errorMessage = null;
 
-        if (functionResponse.PluginName == "UserInteraction" && functionResponse.FunctionName == "SendFinalAnswer")
+        if (functionResponse.PluginName == "UserInteraction" && (functionResponse.FunctionName == "SendFinalAnswer" || functionResponse.FunctionName == "SendMessage"))
         {
             if (functionResponse.Parameters.Count > 0 && functionResponse.Parameters.TryGetValue("answer", out object valueObj))
             {
                 finalAnswer = ParseObjectAsString(valueObj);
+            }
+            if (functionResponse.Parameters.Count > 0 && functionResponse.Parameters.TryGetValue("message", out object messageObj))
+            {
+                finalAnswer = ParseObjectAsString(messageObj);
             }
             else
             {
@@ -330,6 +334,17 @@ public sealed class FunctionCallingStepwisePlanner
         public string SendFinalAnswer([Description("The final answer")] string answer)
         {
             return "Thanks";
+        }
+
+        /// <summary>
+        /// This function is used by the <see cref="FunctionCallingStepwisePlanner"/> to indicate when that more informations is need to make plan.
+        /// </summary>
+        /// <param name="message">The message to user.</param>
+        [KernelFunction]
+        [Description("This function is used to send the request for more information to the user.")]
+        public string SendMessage([Description("The mesage")] string message)
+        {
+            return "Message";
         }
     }
 }
