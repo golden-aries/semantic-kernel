@@ -6,6 +6,9 @@ namespace TxExperiment.Http;
 /// </summary>
 public class MessagesHolder
 {
+    /// <summary>
+    /// Request sequential number
+    /// </summary>
     public long? Seq { get; set; }
 
     /// <summary>
